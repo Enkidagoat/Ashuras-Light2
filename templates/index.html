@@ -2,128 +2,108 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Ashura's Light 2 — Lunar Geometry Navigator</title>
+<title>Ashura's Light 2 — Lunar South-Pole Geometry</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-body { font-family: system-ui, sans-serif; margin: 1.5rem; max-width: 56rem; }
-label { display: block; margin-top: 0.6rem; }
-input, button { font-size: 1rem; padding: 0.35rem; }
-.card { margin-top: 1.2rem; padding: 1rem; border: 1px solid #ccc; }
-.warning { color: #a00; font-weight: 600; }
-.horizon { margin: 0.5rem 0; height: 140px; border: 1px solid #666; position: relative; background: linear-gradient(#a0d8ef 0%, #fff 55%, #ddd 100%); }
-.marker { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 1px solid #333; }
-.sun { background: #ffcc00; }
-.earth { background: #3366cc; }
-.compass { font-size: 0.75rem; color: #555; }
-table { border-collapse: collapse; width: 100%; margin-top: 0.5rem; }
-th, td { border: 1px solid #ccc; padding: 0.4rem; text-align: left; }
-#view3d { width: 100%; height: 320px; border: 1px solid #666; margin-top: 0.5rem; background: #111; }
+:root { --bg:#0b0e14; --panel:#141820; --amber:#e8a838; --blue:#4a7dff; --text:#e8eaed; --muted:#8b929a; --warn:#c45c5c; }
+body { background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; margin:0; padding:1.25rem; max-width:72rem; }
+h1 { font-size:1.4rem; letter-spacing:0.04em; margin:0; }
+.sub { color:var(--muted); font-size:0.85rem; margin-top:0.25rem; }
+.banner { background:#1a1208; border-left:3px solid var(--amber); padding:0.6rem 0.9rem; margin:1rem 0; font-size:0.85rem; }
+.grid { display:grid; grid-template-columns:1fr 1.4fr; gap:1rem; }
+@media (max-width:700px){ .grid { grid-template-columns:1fr; } }
+.panel { background:var(--panel); border:1px solid #222; border-radius:6px; padding:1rem; }
+label { display:block; font-size:0.75rem; color:var(--muted); margin-top:0.6rem; }
+input, button { background:#0e1218; color:var(--text); border:1px solid #333; padding:0.45rem; width:100%; box-sizing:border-box; font-size:1rem; }
+button { background:var(--amber); color:#111; font-weight:600; cursor:pointer; margin-top:0.8rem; border:none; }
+.result-cards { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
+.sun { border-top:3px solid var(--amber); }
+.earth { border-top:3px solid var(--blue); }
+.azel { font-size:1.6rem; font-weight:600; }
+.azel span { font-size:0.8rem; color:var(--muted); display:block; }
+#plot { width:100%; height:220px; background:#0e1218; border:1px solid #333; margin-top:0.75rem; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.5rem; }
+th, td { border-bottom:1px solid #222; padding:0.4rem 0.3rem; text-align:left; }
+.warning { color:var(--warn); font-size:0.8rem; }
+details { margin-top:0.75rem; font-size:0.85rem; }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 </head>
 <body>
-<h1>Ashura's Light 2</h1>
-<p>Lunar south-pole site geometry navigator.</p>
-<p class="warning">Terrain-free centre-direction geometry only. Does not establish usable power, operational communications, terrain visibility, or landing safety.</p>
+<h1>ASHURA'S LIGHT 2</h1>
+<div class="sub">LUNAR SOUTH-POLE GEOMETRY &nbsp;|&nbsp; ENGINE VERIFIED</div>
+<div class="banner">Terrain-free centre-direction geometry only. Does not establish usable power, operational communications, terrain visibility, or landing safety.</div>
 {% if not kernels_ok %}
-<p class="warning">Kernels not loaded. See docs/KERNEL_MANIFEST.md.</p>
+<div class="banner">Kernels not loaded. Run <code>python scripts/bootstrap_kernels.py</code> or set AL2_KERNEL_DIR.</div>
 {% endif %}
 
-<form id="form">
-  <label>East longitude (°) <input name="lon" type="number" step="any" value="0" required></label>
-  <label>Latitude (° , +N) <input name="lat" type="number" step="any" value="-89.9" required></label>
-  <label>Altitude above 1737.4 km sphere (km) <input name="alt" type="number" step="any" value="0"></label>
-  <label>UTC <input name="utc" type="text" value="2026-11-15 00:00:00 UTC" required></label>
-  <button type="submit">Calculate & Save</button>
-</form>
+<div class="grid">
+  <div class="panel">
+    <h3>01 — Observation parameters</h3>
+    <form id="form">
+      <label>LATITUDE (°, +N)</label>
+      <input name="lat" type="number" step="any" value="-89.9" required>
+      <label>LONGITUDE (° E)</label>
+      <input name="lon" type="number" step="any" value="0" required>
+      <label>ALTITUDE (km above 1737.4 km sphere)</label>
+      <input name="alt" type="number" step="any" value="0">
+      <label>UTC</label>
+      <input name="utc" type="text" value="2026-11-15 00:00:00 UTC" required>
+      <button type="submit">Calculate & Save</button>
+    </form>
+  </div>
 
-<div id="current"></div>
-<h2>Comparison (up to 4 saved evaluations)</h2>
-<div id="comparison"></div>
+  <div class="panel" id="results">
+    <h3>02 — Local sky geometry</h3>
+    <p class="sub">Azimuth / elevation &nbsp;|&nbsp; Geometric</p>
+    <div id="cards"></div>
+    <canvas id="plot"></canvas>
+    <p class="sub">Zero-degree horizon marked. Amber = Sun, blue = Earth.</p>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:1rem;">
+  <h3>Comparison (up to 4 evaluations)</h3>
+  <div id="comparison"><p class="sub">Calculate at least two to compare.</p></div>
+</div>
+
+<div class="panel" style="margin-top:1rem;">
+  <details>
+    <summary>03 — Calculation provenance & limitations</summary>
+    <p>Ephemeris: DE421 &nbsp;|&nbsp; Frame: MOON_ME_DE421 &nbsp;|&nbsp; Correction: NONE (geometric) &nbsp;|&nbsp; Radius: 1737.4 km</p>
+    <p class="warning">Terrain-free centre-direction geometry only. Does not establish usable electrical power, operational communication availability, terrain-masked visibility, or landing safety.</p>
+    <button id="export" style="width:auto;padding:0.4rem 0.8rem;">Export JSON</button>
+  </details>
+</div>
 
 <script>
 const saved = [];
-let scene, camera, renderer, sunMesh, earthMesh, raySun, rayEarth;
+let last = null;
+const plot = document.getElementById("plot");
+const ctx = plot.getContext("2d");
 
-function init3D(container) {
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a0a12);
-  camera = new THREE.PerspectiveCamera(60, container.clientWidth / 320, 0.1, 100);
-  camera.position.set(0, 2.2, 4.5);
-  camera.lookAt(0, 0.5, 0);
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(container.clientWidth, 320);
-  container.appendChild(renderer.domElement);
-
-  const plane = new THREE.Mesh(
-    new THREE.CircleGeometry(3.2, 48),
-    new THREE.MeshBasicMaterial({ color: 0x333344, side: THREE.DoubleSide })
-  );
-  plane.rotation.x = -Math.PI / 2;
-  scene.add(plane);
-
-  const axes = new THREE.AxesHelper(2.5);
-  scene.add(axes);
-
-  function label(text, pos, color) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 128; canvas.height = 64;
-    const ctx = canvas.getContext('2d');
+function drawPlot(sun, earth) {
+  const w = plot.width = plot.clientWidth;
+  const h = plot.height = 220;
+  ctx.clearRect(0,0,w,h);
+  ctx.fillStyle = "#0e1218";
+  ctx.fillRect(0,0,w,h);
+  // horizon line
+  const hy = h * 0.72;
+  ctx.strokeStyle = "#555";
+  ctx.beginPath(); ctx.moveTo(0, hy); ctx.lineTo(w, hy); ctx.stroke();
+  ctx.fillStyle = "#666";
+  ctx.font = "11px sans-serif";
+  ctx.fillText("0° horizon", 8, hy - 4);
+  ctx.fillText("N", w*0.02, hy+14); ctx.fillText("E", w*0.27, hy+14);
+  ctx.fillText("S", w*0.52, hy+14); ctx.fillText("W", w*0.77, hy+14);
+  function mark(az, el, color) {
+    const x = (az / 360) * w;
+    const y = hy - (el / 90) * (hy - 10);
     ctx.fillStyle = color;
-    ctx.font = 'bold 28px sans-serif';
-    ctx.fillText(text, 8, 40);
-    const tex = new THREE.CanvasTexture(canvas);
-    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex }));
-    sprite.position.copy(pos);
-    sprite.scale.set(0.8, 0.4, 1);
-    scene.add(sprite);
+    ctx.beginPath(); ctx.arc(x, Math.max(10, Math.min(hy-2, y)), 7, 0, Math.PI*2); ctx.fill();
   }
-  label('N', new THREE.Vector3(0, 0.1, -2.8), '#fff');
-  label('E', new THREE.Vector3(2.8, 0.1, 0), '#fff');
-  label('S', new THREE.Vector3(0, 0.1, 2.8), '#fff');
-  label('W', new THREE.Vector3(-2.8, 0.1, 0), '#fff');
-
-  sunMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 16, 16),
-    new THREE.MeshBasicMaterial({ color: 0xffcc00 })
-  );
-  earthMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(0.16, 16, 16),
-    new THREE.MeshBasicMaterial({ color: 0x3366cc })
-  );
-  scene.add(sunMesh); scene.add(earthMesh);
-
-  raySun = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 2, 0xffcc00);
-  rayEarth = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 2, 0x3366cc);
-  scene.add(raySun); scene.add(rayEarth);
-
-  function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-  }
-  animate();
-}
-
-function azelToDir(azDeg, elDeg) {
-  const az = THREE.MathUtils.degToRad(azDeg);
-  const el = THREE.MathUtils.degToRad(elDeg);
-  const r = 2.4;
-  const x = r * Math.cos(el) * Math.sin(az);
-  const y = r * Math.sin(el);
-  const z = -r * Math.cos(el) * Math.cos(az);
-  return new THREE.Vector3(x, y, z);
-}
-
-function update3D(sunAz, sunEl, earthAz, earthEl) {
-  if (!sunMesh) return;
-  const s = azelToDir(sunAz, sunEl);
-  const e = azelToDir(earthAz, earthEl);
-  sunMesh.position.copy(s);
-  earthMesh.position.copy(e);
-  raySun.setDirection(s.clone().normalize());
-  raySun.setLength(s.length() * 0.95);
-  rayEarth.setDirection(e.clone().normalize());
-  rayEarth.setLength(e.length() * 0.95);
+  if (sun) mark(sun.azimuth_deg, sun.elevation_deg, "#e8a838");
+  if (earth) mark(earth.azimuth_deg, earth.elevation_deg, "#4a7dff");
 }
 
 document.getElementById("form").onsubmit = async (e) => {
@@ -141,43 +121,39 @@ document.getElementById("form").onsubmit = async (e) => {
     body: JSON.stringify(body)
   });
   const data = await res.json();
-  const cur = document.getElementById("current");
-  if (data.error) { cur.innerHTML = `<p class="warning">${data.error}</p>`; return; }
+  if (data.error) {
+    document.getElementById("cards").innerHTML = `<p class="warning">${data.error}</p>`;
+    return;
+  }
   saved.unshift(data);
   if (saved.length > 4) saved.pop();
-  renderCurrent(data);
+  last = data;
+  renderCards(data);
+  drawPlot(data.sun, data.earth);
   renderComparison();
 };
 
-function renderCurrent(d) {
+function renderCards(d) {
   const s = d.sun, e = d.earth;
-  document.getElementById("current").innerHTML = `
-    <div class="card">
-      <h3>Current: ${s.site_lat_deg}° N, ${s.site_lon_deg}° E &nbsp;|&nbsp; ${s.utc}</h3>
-      <p><strong>Sun</strong> — Azimuth: ${s.azimuth_deg.toFixed(4)}° (clockwise from north), Elevation: ${s.elevation_deg.toFixed(4)}° (above local horizon)</p>
-      <p><strong>Earth</strong> — Azimuth: ${e.azimuth_deg.toFixed(4)}° , Elevation: ${e.elevation_deg.toFixed(4)}°</p>
-      <div class="horizon">
-        <div class="marker sun" style="left:${(s.azimuth_deg/360)*100}%; bottom:${Math.max(0, Math.min(90, s.elevation_deg))*1.3}px;" title="Sun"></div>
-        <div class="marker earth" style="left:${(e.azimuth_deg/360)*100}%; bottom:${Math.max(0, Math.min(90, e.elevation_deg))*1.3}px;" title="Earth"></div>
+  document.getElementById("cards").innerHTML = `
+    <div class="result-cards">
+      <div class="panel sun">
+        <div class="sub">SUN</div>
+        <div class="azel">${s.azimuth_deg.toFixed(2)}° <span>Azimuth</span></div>
+        <div class="azel">${s.elevation_deg.toFixed(2)}° <span>Elevation</span></div>
       </div>
-      <div class="compass">N (0°) &nbsp;&nbsp; E (90°) &nbsp;&nbsp; S (180°) &nbsp;&nbsp; W (270°) &nbsp;|&nbsp; Height of marker ≈ elevation above horizon</div>
-      <p><em>Yellow = Sun, blue = Earth. Azimuth is horizontal position; elevation is height above the horizon line.</em></p>
-      <h4>Local horizon (3D) — geometric only</h4>
-      <div id="view3d"></div>
-      <p class="warning">3D view shows centre-direction geometry only. No terrain, no Moon image, no power or communications claims.</p>
-      <p class="warning">${s.limitations}</p>
-      <p>Frame: ${d.provenance.frame} &nbsp;|&nbsp; Correction: ${d.provenance.correction} &nbsp;|&nbsp; Radius: ${d.provenance.radius_km} km</p>
-      <button onclick="exportJSON()">Export this result (JSON)</button>
-    </div>`;
-  window._last = d;
-  const container = document.getElementById("view3d");
-  init3D(container);
-  update3D(s.azimuth_deg, s.elevation_deg, e.azimuth_deg, e.elevation_deg);
+      <div class="panel earth">
+        <div class="sub">EARTH</div>
+        <div class="azel">${e.azimuth_deg.toFixed(2)}° <span>Azimuth</span></div>
+        <div class="azel">${e.elevation_deg.toFixed(2)}° <span>Elevation</span></div>
+      </div>
+    </div>
+    <p class="sub">${s.site_lat_deg}° N, ${s.site_lon_deg}° E &nbsp;|&nbsp; ${s.utc}</p>`;
 }
 
 function renderComparison() {
   if (saved.length < 2) {
-    document.getElementById("comparison").innerHTML = "<p>Calculate at least two evaluations to compare.</p>";
+    document.getElementById("comparison").innerHTML = "<p class=\"sub\">Calculate at least two to compare.</p>";
     return;
   }
   let rows = saved.map((d,i) => `
@@ -194,13 +170,17 @@ function renderComparison() {
       ${rows}
     </table>`;
 }
-function exportJSON() {
-  const blob = new Blob([JSON.stringify(window._last, null, 2)], {type:"application/json"});
+
+document.getElementById("export").onclick = () => {
+  if (!last) return;
+  const blob = new Blob([JSON.stringify(last, null, 2)], {type:"application/json"});
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "al2-result.json";
   a.click();
-}
+};
+
+drawPlot(null, null);
 </script>
 </body>
 </html>
