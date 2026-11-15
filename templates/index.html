@@ -42,7 +42,7 @@ details { margin-top:0.75rem; font-size:0.85rem; }
     <form id="form">
       <label>LATITUDE (°, +N)</label>
       <input name="lat" type="number" step="any" value="-89.9" required>
-      <label>LONGITUDE (° E)</label>
+      <label>LONGITUDE (°, +E)</label>
       <input name="lon" type="number" step="any" value="0" required>
       <label>ALTITUDE (km above 1737.4 km sphere)</label>
       <input name="alt" type="number" step="any" value="0">
@@ -57,7 +57,7 @@ details { margin-top:0.75rem; font-size:0.85rem; }
     <p class="sub">Azimuth / elevation &nbsp;|&nbsp; Geometric</p>
     <div id="cards"></div>
     <canvas id="plot"></canvas>
-    <p class="sub">Zero-degree horizon marked. Amber = Sun, blue = Earth.</p>
+    <p class="sub">Zero-degree horizon marked. Amber = Sun, blue = Earth. Markers below the line are below the horizon.</p>
   </div>
 </div>
 
@@ -82,13 +82,15 @@ const plot = document.getElementById("plot");
 const ctx = plot.getContext("2d");
 
 function drawPlot(sun, earth) {
-  const w = plot.width = plot.clientWidth;
-  const h = plot.height = 220;
+  const cssW = plot.clientWidth || 300;
+  const cssH = 220;
+  plot.width = cssW;
+  plot.height = cssH;
+  const w = cssW, h = cssH;
   ctx.clearRect(0,0,w,h);
   ctx.fillStyle = "#0e1218";
   ctx.fillRect(0,0,w,h);
-  // horizon line
-  const hy = h * 0.72;
+  const hy = h * 0.55;
   ctx.strokeStyle = "#555";
   ctx.beginPath(); ctx.moveTo(0, hy); ctx.lineTo(w, hy); ctx.stroke();
   ctx.fillStyle = "#666";
@@ -98,13 +100,15 @@ function drawPlot(sun, earth) {
   ctx.fillText("S", w*0.52, hy+14); ctx.fillText("W", w*0.77, hy+14);
   function mark(az, el, color) {
     const x = (az / 360) * w;
-    const y = hy - (el / 90) * (hy - 10);
+    const y = hy - (el / 90) * (h * 0.4);
     ctx.fillStyle = color;
-    ctx.beginPath(); ctx.arc(x, Math.max(10, Math.min(hy-2, y)), 7, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, Math.max(6, Math.min(h-6, y)), 7, 0, Math.PI*2); ctx.fill();
   }
   if (sun) mark(sun.azimuth_deg, sun.elevation_deg, "#e8a838");
   if (earth) mark(earth.azimuth_deg, earth.elevation_deg, "#4a7dff");
 }
+
+window.addEventListener("resize", () => { if (last) drawPlot(last.sun, last.earth); });
 
 document.getElementById("form").onsubmit = async (e) => {
   e.preventDefault();
@@ -148,7 +152,7 @@ function renderCards(d) {
         <div class="azel">${e.elevation_deg.toFixed(2)}° <span>Elevation</span></div>
       </div>
     </div>
-    <p class="sub">${s.site_lat_deg}° N, ${s.site_lon_deg}° E &nbsp;|&nbsp; ${s.utc}</p>`;
+    <p class="sub">Lat ${s.site_lat_deg}°, Lon ${s.site_lon_deg}° &nbsp;|&nbsp; ${s.utc}</p>`;
 }
 
 function renderComparison() {
