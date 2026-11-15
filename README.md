@@ -22,7 +22,7 @@ pip install -r requirements.txt
 ```bash
 python scripts/bootstrap_kernels.py
 ```
-This downloads the five pinned NAIF files into `kernels/` and verifies every SHA-256 against `docs/KERNEL_MANIFEST.md`. It exits non-zero on any mismatch.
+This downloads the five NAIF files listed in `docs/KERNEL_MANIFEST.md` into `kernels/`. Each download is staged in a temporary file, hash-checked, and atomically moved into place; a mismatch leaves any existing destination file untouched.
 
 ```bash
 export AL2_KERNEL_DIR=kernels
@@ -34,6 +34,15 @@ On Windows PowerShell:
 ```powershell
 $env:AL2_KERNEL_DIR = (Resolve-Path .\kernels).Path
 python app.py
+```
+
+The application re-reads the manifest and verifies all five hashes before loading any kernel into SPICE. The kernel directory must contain exactly the five manifest-listed regular files; missing, modified, symlinked, or extra entries prevent calculations. To provide kernels yourself, place the unmodified files from the manifest in that directory. The application does not calculate with a partially loaded or unverified stack.
+
+To acquire and launch in PowerShell:
+```powershell
+python scripts\bootstrap_kernels.py
+$env:AL2_KERNEL_DIR = (Resolve-Path .\kernels).Path
+python .\app.py
 ```
 
 ## Docker

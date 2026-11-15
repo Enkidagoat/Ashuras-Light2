@@ -1,41 +1,86 @@
 #!/usr/bin/env python3
-"""Download and verify the pinned DE421 kernel stack."""
+"""Download and verify the DE421 kernels listed in the project manifest."""
 
-import hashlib
+from __future__ import annotations
+
 import os
+import shutil
 import sys
+import tempfile
 import urllib.request
+from pathlib import Path
 
-BASE = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/"
-FILES = [
-    ("naif0012.tls", "lsk/naif0012.tls", "678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b"),
-    ("pck00011.tpc", "pck/pck00011.tpc", "3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1"),
-    ("moon_080317.tf", "fk/satellites/moon_080317.tf", "78732477b96f9863e7b0d65bcee3c22b8707ca5ed0db56d1173319cb2e8c7993"),
-    ("moon_pa_de421_1900-2050.bpc", "pck/moon_pa_de421_1900-2050.bpc", "656f90616403d75a75f0cd6c8830fc5b44f8cb4facb5ccb8915e752b397520cf"),
-    ("de421.bsp", "spk/planets/a_old_versions/de421.bsp", "08b20db2ae22488650641c5a9033e5bfda4b1c4b440cfeaf20f621cfa18ecdb3"),
-]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
 
-def sha256(path):
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()
+from src.al2.kernel_manifest import (  # noqa: E402
+    DEFAULT_MANIFEST_PATH,
+    KernelIntegrityError,
+    KernelSpec,
+    read_kernel_manifest,
+    sha256_file,
+    verify_kernel_files,
+)
 
-def main():
-    dest = os.environ.get("AL2_KERNEL_DIR", "kernels")
-    os.makedirs(dest, exist_ok=True)
-    for name, rel, expected in FILES:
-        path = os.path.join(dest, name)
-        url = BASE + rel
-        print(f"Fetching {name} ...")
-        urllib.request.urlretrieve(url, path)
-        actual = sha256(path)
-        if actual != expected:
-            print(f"HASH MISMATCH for {name}: {actual}", file=sys.stderr)
-            sys.exit(1)
-        print(f"  verified {actual}")
-    print(f"All kernels verified in {dest}")
+BASE_URL = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/"
+
+
+def download_kernel(
+    spec: KernelSpec,
+    destination_dir: str | Path,
+    base_url: str = BASE_URL,
+) -> Path:
+    """Download one kernel to a same-directory temporary file and atomically install it."""
+    destination_dir = Path(destination_dir)
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    destination = destination_dir / spec.filename
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{spec.filename}.",
+        suffix=".part",
+        dir=destination_dir,
+    )
+    temporary_path = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as target:
+            url = base_url.rstrip("/") + "/" + spec.archive_path
+            with urllib.request.urlopen(url) as response:
+                shutil.copyfileobj(response, target, length=1024 * 1024)
+            target.flush()
+            os.fsync(target.fileno())
+
+        actual_hash = sha256_file(temporary_path)
+        if actual_hash != spec.sha256:
+            raise KernelIntegrityError(
+                f"SHA-256 mismatch for {spec.filename}: "
+                f"expected {spec.sha256}, got {actual_hash}"
+            )
+        os.replace(temporary_path, destination)
+        return destination
+    finally:
+        if temporary_path.exists():
+            temporary_path.unlink()
+
+
+def bootstrap(
+    destination_dir: str | Path,
+    manifest_path: str | Path = DEFAULT_MANIFEST_PATH,
+) -> tuple[Path, ...]:
+    """Acquire each manifest entry and verify the resulting exact file set."""
+    specs = read_kernel_manifest(manifest_path)
+    destination_dir = Path(destination_dir)
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    for spec in specs:
+        print(f"Fetching {spec.filename} ...")
+        installed = download_kernel(spec, destination_dir)
+        print(f"  verified {sha256_file(installed)}")
+    return verify_kernel_files(destination_dir, specs)
+
+
+def main() -> None:
+    destination = Path(os.environ.get("AL2_KERNEL_DIR", "kernels"))
+    verified = bootstrap(destination)
+    print(f"All {len(verified)} kernels verified in {destination}")
+
 
 if __name__ == "__main__":
     main()
