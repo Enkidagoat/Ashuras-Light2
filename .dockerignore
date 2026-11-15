@@ -1,0 +1,9 @@
+.git
+.venv
+.pytest_cache
+__pycache__
+**/__pycache__
+kernels
+dist
+AL2_JUDGE_READINESS_REPORT.md
+AL2_RELEASE_REVIEW.md
