@@ -6,18 +6,21 @@ The local offline distribution, kernel integrity checks, application API, and UI
 
 ## Tested source and distribution
 
-- Branch: `feature/local-horizon-3d`
+- Branch: `integration/al2-release-candidate`
+- Integration merge commit: `a9f0d76d05b3e5871be3c60381084ac59f308861`
+- Judge package commit: `ed304416699f51027ef425936e13e3788635d55d`
+- Image-context hardening commit: `a0565ae52987b1e68cba1a1694711cd8964fa8d5`
 - Source base commit: `f71e4fd0c8a8e9f97ae3ba0636e709042b9f5161`
 - Existing checkpoints `60e42a2624514a21154df450c1c07a45c7fc1f09` and `f71e4fd0c8a8e9f97ae3ba0636e709042b9f5161` are preserved.
-- AL2-TEST-03 changes are local and uncommitted; no changes were made to `main`.
+- Judge-facing AL2-TEST-03 changes are committed on the integration branch. Internal reports remain uncommitted; no changes were made to `main`.
 - Docker image: `ashura-light2:judge`
-- Docker image ID: `sha256:14b8e8cc76b424b2b831d7a178e1f23a86100cba86843311deaabb69f4ce7f28`
+- Docker image ID: `sha256:6a4b2f9bb25da3fe96a92b90dc0509295889800cd978a234772f138cce16691a`
 - Archive: `dist/ashura-light2-judge.tar`
 - Archive size: **97,968,128 bytes**
-- Archive SHA-256: `14339441ba6f0d541a86e7f55d3df8545113ff965f2c72bdfb6eff075a2b8755`
+- Archive SHA-256: `9e02a93579d0980c42dd3aa0f9e82cd66d4baf1c17ceaa762192e0ec44f3d215`
 - Checksum manifest: `dist/SHA256SUMS`
 - The `dist/SHA256SUMS` entry matches the archive SHA-256 above.
-- Clean-state verification: confirmed no containers referenced the generated image, removed the `ashura-light2:judge` image/tag, verified the tag was absent, then loaded `.\dist\ashura-light2-judge.tar`. Docker restored image ID `sha256:14b8e8cc76b424b2b831d7a178e1f23a86100cba86843311deaabb69f4ce7f28`.
+- Clean-state verification: removed the `ashura-light2:judge` tag, loaded `.\dist\ashura-light2-judge.tar`, and confirmed Docker restored image ID `sha256:6a4b2f9bb25da3fe96a92b90dc0509295889800cd978a234772f138cce16691a`.
 
 The image includes the Flask application, Python dependencies, MIT license, kernel manifest, separate kernel notice, current checksum-verifying judge quick start, updated screenshots, warm lunar color palette, and all five verified kernels. Kernels were downloaded and verified during image build; no downloader runs at application startup.
 
@@ -37,14 +40,14 @@ A disposable container with a modified `de421.bsp` rejected startup integrity an
 
 ## Automated and scientific regression
 
-- Re-run after clean-state archive load: full packaged test suite **12 passed, 0 failed, 0 skipped**.
-- The restored image ran with Docker `--network none`; its in-container API returned **HTTP 200**.
+- Re-run after clean-state archive load: full packaged test suite **12 passed, 0 failed, 0 skipped**. The host Python 3.14 environment, without kernels, reported 9 passed and 3 skipped; the complete Docker run with verified kernels passed all 12.
+- The restored image ran with Docker `--network none`; Flask returned **HTTP 200** for `/` and for all three API cases.
 - Reference case at longitude 0°, latitude -89.9°, altitude 0 km, UTC `2026-11-15 00:00:00`:
   - Sun: azimuth `114.4394201°`, elevation `+1.5149980°` (rounded: `114.4394° / +1.5150°`).
   - Earth: azimuth `357.3803908°`, elevation `-3.4529761°` (rounded: `357.3804° / -3.4530°`).
 - API checks at longitude/latitude `(-30°, -89.9°)` and `(+30°, +89.9°)` preserved both signed coordinates and returned finite Sun and Earth azimuth/elevation values.
-- A disposable container with a modified `de421.bsp` returned **HTTP 503** and no calculation after the restored-image regression run.
-- `src/al2/geometry.py` was not modified. DE421, `MOON_ME_DE421`, correction `NONE`, reference radius `1737.4 km`, coordinate conventions, and calculation formulas remain unchanged.
+- Invalid longitude input returned **HTTP 400**. A modified `de421.bsp` returned **HTTP 503** and no calculation.
+- The kernel-loading changes in `src/al2/geometry.py` match the preserved `f71e4fd` integrity checkpoint; this integration adds no geometry changes. DE421, `MOON_ME_DE421`, correction `NONE`, reference radius `1737.4 km`, coordinate conventions, and calculation formulas remain unchanged.
 
 ## User-interface verification
 
@@ -57,7 +60,7 @@ The running application was exercised with mouse clicks and keyboard Enter submi
 | +89.9° | +30° | 2026-11-17 00:00 UTC | 119.919 / -1.505 | 215.216 / +0.550 |
 | -89.9° | 0° | 2026-11-15 00:00 UTC | 114.439 / +1.515 | 357.380 / -3.453 |
 
-The visual refresh uses a warm near-black background, warm charcoal panels, amber Sun accents, and copper Earth accents. At a 390 × 844 mobile viewport, inputs, result cards, plot, comparison, and provenance remained accessible. The document width equaled the viewport width (390 px); the wider comparison table scrolls within its own keyboard-focusable region (672 px content within a 316 px region), without page-wide horizontal overflow.
+The visual refresh uses a warm near-black background, warm charcoal panels, amber Sun accents, and copper Earth accents. At a 390 × 844 mobile viewport, inputs, result cards, plot, comparison, and provenance remained accessible. The layout viewport measured 375 px due to the vertical scrollbar and document scroll width also measured 375 px, so there was no page-wide horizontal overflow. The keyboard-focusable comparison region measured 302 px with 672 px of scrollable table content.
 
 Screenshots captured from the running application:
 
@@ -80,6 +83,6 @@ Open <http://127.0.0.1:5000/>. The project is distributed with all required kern
 
 ## Outstanding items
 
-- The archive and AL2-TEST-03 source/documentation changes remain local; they have not been pushed or submitted.
+- The archive and commits remain local; they have not been pushed or submitted.
 - No merge, deployment, publication, or repository visibility change was performed.
 - For a judge who requires strict container network isolation and browser access simultaneously, the Docker port-publishing limitation needs an owner-approved alternative.
