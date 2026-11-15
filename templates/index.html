@@ -17,7 +17,9 @@ input, button { font-size: 1rem; padding: 0.35rem; }
 .compass { font-size: 0.75rem; color: #555; }
 table { border-collapse: collapse; width: 100%; margin-top: 0.5rem; }
 th, td { border: 1px solid #ccc; padding: 0.4rem; text-align: left; }
+#view3d { width: 100%; height: 320px; border: 1px solid #666; margin-top: 0.5rem; background: #111; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 </head>
 <body>
 <h1>Ashura's Light 2</h1>
@@ -41,6 +43,89 @@ th, td { border: 1px solid #ccc; padding: 0.4rem; text-align: left; }
 
 <script>
 const saved = [];
+let scene, camera, renderer, sunMesh, earthMesh, raySun, rayEarth;
+
+function init3D(container) {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0a12);
+  camera = new THREE.PerspectiveCamera(60, container.clientWidth / 320, 0.1, 100);
+  camera.position.set(0, 2.2, 4.5);
+  camera.lookAt(0, 0.5, 0);
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(container.clientWidth, 320);
+  container.appendChild(renderer.domElement);
+
+  const plane = new THREE.Mesh(
+    new THREE.CircleGeometry(3.2, 48),
+    new THREE.MeshBasicMaterial({ color: 0x333344, side: THREE.DoubleSide })
+  );
+  plane.rotation.x = -Math.PI / 2;
+  scene.add(plane);
+
+  const axes = new THREE.AxesHelper(2.5);
+  scene.add(axes);
+
+  function label(text, pos, color) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = color;
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText(text, 8, 40);
+    const tex = new THREE.CanvasTexture(canvas);
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex }));
+    sprite.position.copy(pos);
+    sprite.scale.set(0.8, 0.4, 1);
+    scene.add(sprite);
+  }
+  label('N', new THREE.Vector3(0, 0.1, -2.8), '#fff');
+  label('E', new THREE.Vector3(2.8, 0.1, 0), '#fff');
+  label('S', new THREE.Vector3(0, 0.1, 2.8), '#fff');
+  label('W', new THREE.Vector3(-2.8, 0.1, 0), '#fff');
+
+  sunMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+  );
+  earthMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(0.16, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0x3366cc })
+  );
+  scene.add(sunMesh); scene.add(earthMesh);
+
+  raySun = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 2, 0xffcc00);
+  rayEarth = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 2, 0x3366cc);
+  scene.add(raySun); scene.add(rayEarth);
+
+  function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+  animate();
+}
+
+function azelToDir(azDeg, elDeg) {
+  const az = THREE.MathUtils.degToRad(azDeg);
+  const el = THREE.MathUtils.degToRad(elDeg);
+  const r = 2.4;
+  const x = r * Math.cos(el) * Math.sin(az);
+  const y = r * Math.sin(el);
+  const z = -r * Math.cos(el) * Math.cos(az);
+  return new THREE.Vector3(x, y, z);
+}
+
+function update3D(sunAz, sunEl, earthAz, earthEl) {
+  if (!sunMesh) return;
+  const s = azelToDir(sunAz, sunEl);
+  const e = azelToDir(earthAz, earthEl);
+  sunMesh.position.copy(s);
+  earthMesh.position.copy(e);
+  raySun.setDirection(s.clone().normalize());
+  raySun.setLength(s.length() * 0.95);
+  rayEarth.setDirection(e.clone().normalize());
+  rayEarth.setLength(e.length() * 0.95);
+}
+
 document.getElementById("form").onsubmit = async (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -63,6 +148,7 @@ document.getElementById("form").onsubmit = async (e) => {
   renderCurrent(data);
   renderComparison();
 };
+
 function renderCurrent(d) {
   const s = d.sun, e = d.earth;
   document.getElementById("current").innerHTML = `
@@ -76,12 +162,19 @@ function renderCurrent(d) {
       </div>
       <div class="compass">N (0°) &nbsp;&nbsp; E (90°) &nbsp;&nbsp; S (180°) &nbsp;&nbsp; W (270°) &nbsp;|&nbsp; Height of marker ≈ elevation above horizon</div>
       <p><em>Yellow = Sun, blue = Earth. Azimuth is horizontal position; elevation is height above the horizon line.</em></p>
+      <h4>Local horizon (3D) — geometric only</h4>
+      <div id="view3d"></div>
+      <p class="warning">3D view shows centre-direction geometry only. No terrain, no Moon image, no power or communications claims.</p>
       <p class="warning">${s.limitations}</p>
       <p>Frame: ${d.provenance.frame} &nbsp;|&nbsp; Correction: ${d.provenance.correction} &nbsp;|&nbsp; Radius: ${d.provenance.radius_km} km</p>
       <button onclick="exportJSON()">Export this result (JSON)</button>
     </div>`;
   window._last = d;
+  const container = document.getElementById("view3d");
+  init3D(container);
+  update3D(s.azimuth_deg, s.elevation_deg, e.azimuth_deg, e.elevation_deg);
 }
+
 function renderComparison() {
   if (saved.length < 2) {
     document.getElementById("comparison").innerHTML = "<p>Calculate at least two evaluations to compare.</p>";
