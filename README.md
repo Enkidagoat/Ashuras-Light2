@@ -1,20 +1,40 @@
 # Ashura's Light 2
 
-Clean-room build of the Lunar Landing Site Navigator (NASA Space Apps Challenge).
+Clean-room lunar south-pole site geometry navigator.
 
-This is a new, independent project. It is not a continuation, migration, or repair of any previous Lunar Navigator or Ashura's Light implementation.
+## What it does
+- Enter a lunar site (east longitude, latitude, altitude).
+- Enter a UTC date-time.
+- Compute terrain-free centre-direction Sun and Earth azimuth/elevation relative to the local radial horizon.
+- Display provenance and explicit limitations.
+- Export results as JSON.
 
-## Status
-Phase 1 — Product definition (owner-authorized). No implementation has begun.
-
-## Purpose
-Allow mission planners, educators, and public users to compare candidate lunar south-pole landing sites and dates by viewing Sun and Earth positions relative to the local lunar horizon.
-
-## Separation
-- This repository: Ashura's Light 2
-- Original Ashura's Light: historical reference only
-- Previous Lunar Navigator work: not copied or migrated
-- Software Research Studio: separate toolkit
+## What it does not do
+- Terrain-masked visibility
+- Usable electrical power prediction
+- Operational communication availability
+- Landing safety assessment
 
 ## Setup
-UNRESOLVED — no implementation exists.
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Download the DE421 kernel stack into `kernels/` (see `docs/KERNEL_MANIFEST.md`). Verify SHA-256.
+
+```bash
+export AL2_KERNEL_DIR=kernels
+python app.py
+```
+
+Open http://127.0.0.1:5000
+
+## Tests
+```bash
+pytest tests/
+```
+
+## License
+MIT. Kernels are not bundled; see KERNEL_MANIFEST.md.
