@@ -1,9 +1,9 @@
 # AL2 Integration Report
 
-**Project:** Ashura's Light 2  
-**Phase:** AL2-INTEGRATION-01  
-**Branch:** `integration/al2-release-candidate`  
-**Status:** Local integration and offline verification complete; awaiting Project Owner testing.
+- **Project:** Ashura's Light 2
+- **Phase:** AL2-INTEGRATION-01
+- **Branch:** `integration/al2-release-candidate`
+- **Status:** Local integration and offline verification complete; awaiting Project Owner testing.
 
 ## Integration history
 
