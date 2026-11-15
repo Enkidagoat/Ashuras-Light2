@@ -5,25 +5,25 @@
 <title>Ashura's Light 2 — Lunar South-Pole Geometry</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-:root { --bg:#0b0e14; --panel:#141820; --amber:#e8a838; --blue:#4a7dff; --text:#e8eaed; --muted:#8b929a; --warn:#c45c5c; }
+:root { --bg:#0c0a08; --panel:#161310; --sun:#e8a838; --earth:#c47a4a; --text:#f0ebe4; --muted:#9a9186; --warn:#c45c5c; }
 body { background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; margin:0; padding:1.25rem; max-width:72rem; }
 h1 { font-size:1.4rem; letter-spacing:0.04em; margin:0; }
 .sub { color:var(--muted); font-size:0.85rem; margin-top:0.25rem; }
-.banner { background:#1a1208; border-left:3px solid var(--amber); padding:0.6rem 0.9rem; margin:1rem 0; font-size:0.85rem; }
+.banner { background:#1a140c; border-left:3px solid var(--sun); padding:0.6rem 0.9rem; margin:1rem 0; font-size:0.85rem; }
 .grid { display:grid; grid-template-columns:1fr 1.4fr; gap:1rem; }
 @media (max-width:700px){ .grid { grid-template-columns:1fr; } }
-.panel { background:var(--panel); border:1px solid #222; border-radius:6px; padding:1rem; }
+.panel { background:var(--panel); border:1px solid #2a241c; border-radius:6px; padding:1rem; }
 label { display:block; font-size:0.75rem; color:var(--muted); margin-top:0.6rem; }
-input, button { background:#0e1218; color:var(--text); border:1px solid #333; padding:0.45rem; width:100%; box-sizing:border-box; font-size:1rem; }
-button { background:var(--amber); color:#111; font-weight:600; cursor:pointer; margin-top:0.8rem; border:none; }
+input, button { background:#0e0c0a; color:var(--text); border:1px solid #3a3228; padding:0.45rem; width:100%; box-sizing:border-box; font-size:1rem; }
+button { background:var(--sun); color:#111; font-weight:600; cursor:pointer; margin-top:0.8rem; border:none; }
 .result-cards { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
-.sun { border-top:3px solid var(--amber); }
-.earth { border-top:3px solid var(--blue); }
+.sun { border-top:3px solid var(--sun); }
+.earth { border-top:3px solid var(--earth); }
 .azel { font-size:1.6rem; font-weight:600; }
 .azel span { font-size:0.8rem; color:var(--muted); display:block; }
-#plot { width:100%; height:220px; background:#0e1218; border:1px solid #333; margin-top:0.75rem; }
+#plot { width:100%; height:220px; background:#0e0c0a; border:1px solid #3a3228; margin-top:0.75rem; }
 table { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.5rem; }
-th, td { border-bottom:1px solid #222; padding:0.4rem 0.3rem; text-align:left; }
+th, td { border-bottom:1px solid #2a241c; padding:0.4rem 0.3rem; text-align:left; }
 .warning { color:var(--warn); font-size:0.8rem; }
 details { margin-top:0.75rem; font-size:0.85rem; }
 </style>
@@ -57,7 +57,7 @@ details { margin-top:0.75rem; font-size:0.85rem; }
     <p class="sub">Azimuth / elevation &nbsp;|&nbsp; Geometric</p>
     <div id="cards"></div>
     <canvas id="plot"></canvas>
-    <p class="sub">Zero-degree horizon marked. Amber = Sun, blue = Earth. Markers below the line are below the horizon.</p>
+    <p class="sub">Zero-degree horizon marked. Amber = Sun, copper = Earth. Markers below the line are below the horizon.</p>
   </div>
 </div>
 
@@ -88,12 +88,12 @@ function drawPlot(sun, earth) {
   plot.height = cssH;
   const w = cssW, h = cssH;
   ctx.clearRect(0,0,w,h);
-  ctx.fillStyle = "#0e1218";
+  ctx.fillStyle = "#0e0c0a";
   ctx.fillRect(0,0,w,h);
   const hy = h * 0.55;
-  ctx.strokeStyle = "#555";
+  ctx.strokeStyle = "#5a5046";
   ctx.beginPath(); ctx.moveTo(0, hy); ctx.lineTo(w, hy); ctx.stroke();
-  ctx.fillStyle = "#666";
+  ctx.fillStyle = "#9a9186";
   ctx.font = "11px sans-serif";
   ctx.fillText("0° horizon", 8, hy - 4);
   ctx.fillText("N", w*0.02, hy+14); ctx.fillText("E", w*0.27, hy+14);
@@ -105,7 +105,7 @@ function drawPlot(sun, earth) {
     ctx.beginPath(); ctx.arc(x, Math.max(6, Math.min(h-6, y)), 7, 0, Math.PI*2); ctx.fill();
   }
   if (sun) mark(sun.azimuth_deg, sun.elevation_deg, "#e8a838");
-  if (earth) mark(earth.azimuth_deg, earth.elevation_deg, "#4a7dff");
+  if (earth) mark(earth.azimuth_deg, earth.elevation_deg, "#c47a4a");
 }
 
 window.addEventListener("resize", () => { if (last) drawPlot(last.sun, last.earth); });
