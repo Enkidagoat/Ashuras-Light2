@@ -27,9 +27,9 @@ The remote feature commit was not merged again; `origin/main` already contained 
 
 `templates/index.html` was reconciled against the latest fetched `origin/main` template. The warm lunar palette and other remote template content were retained, with the responsive, keyboard-focusable comparison-table wrapper restored from the stashed worktree. The resulting template diff against `origin/main` is the table wrapper only.
 
-## Integrated file inventory
+## Integrated release file inventory
 
-The commit tree relative to `origin/main` contains these 20 paths:
+The release implementation and evidence commits add or modify these 20 paths relative to `origin/main`:
 
 **Added**
 
@@ -56,6 +56,8 @@ The commit tree relative to `origin/main` contains these 20 paths:
 - `scripts/bootstrap_kernels.py`
 - `src/al2/geometry.py`
 - `templates/index.html`
+
+`AL2_INTEGRATION_REPORT.md` itself is tracked separately in an internal evidence commit; it is not part of the 20-path release inventory or the judge package commit.
 
 The judge package commit staged only the nine requested judge-facing files. The reconciliation, preservation, release-review, and integration reports are not part of that package commit. The reconciliation, preservation, release-review, readiness, and integration reports are excluded from the Docker build context. `dist/ashura-light2-judge.tar` and `dist/SHA256SUMS` remain ignored and are not in Git history.
 
