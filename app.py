@@ -1,7 +1,7 @@
 """Minimal web application for Ashura's Light 2."""
 
 from flask import Flask, jsonify, render_template, request
-from src.al2.geometry import compute, load_kernels
+from src.al2.geometry import compute, load_kernels, sweep
 import os
 
 app = Flask(__name__)
@@ -43,6 +43,30 @@ def api_compute():
                 "kernels": "DE421 stack (see KERNEL_MANIFEST.md)",
             },
         })
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
+
+
+@app.route("/api/sweep", methods=["POST"])
+def api_sweep():
+    if not KERNELS_OK:
+        return jsonify({"error": "Kernels not loaded. See docs/KERNEL_MANIFEST.md"}), 503
+    data = request.get_json(force=True)
+    try:
+        lon = float(data["lon"])
+        lat = float(data["lat"])
+        utc = data["utc"]
+        alt = float(data.get("alt", 0.0))
+        days = int(data.get("days", 30))
+        step = float(data.get("step_hours", 1.0))
+        result = sweep(lon, lat, utc, days, step, alt)
+        result["provenance"] = {
+            "frame": "MOON_ME_DE421",
+            "correction": "NONE (geometric)",
+            "radius_km": 1737.4,
+            "kernels": "DE421 stack (see KERNEL_MANIFEST.md)",
+        }
+        return jsonify(result)
     except Exception as exc:
         return jsonify({"error": str(exc)}), 400
 
