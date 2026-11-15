@@ -59,6 +59,10 @@ def api_sweep():
         alt = float(data.get("alt", 0.0))
         days = int(data.get("days", 30))
         step = float(data.get("step_hours", 1.0))
+        if not (1 <= days <= 90):
+            return jsonify({"error": "days must be between 1 and 90"}), 400
+        if not (0.25 <= step <= 24):
+            return jsonify({"error": "step_hours must be between 0.25 and 24"}), 400
         result = sweep(lon, lat, utc, days, step, alt)
         result["provenance"] = {
             "frame": "MOON_ME_DE421",
