@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ashura's Light 2 — Lunar Geometry Navigator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 48rem; }
+label { display: block; margin-top: 0.75rem; }
+input, button { font-size: 1rem; padding: 0.4rem; }
+.result { margin-top: 1.5rem; padding: 1rem; border: 1px solid #ccc; }
+.warning { color: #a00; font-weight: bold; }
+.horizon { margin-top: 1rem; height: 120px; border: 1px solid #999; position: relative; background: linear-gradient(#87ceeb, #fff 60%, #ccc); }
+.marker { position: absolute; width: 12px; height: 12px; border-radius: 50%; }
+.sun { background: #ffcc00; }
+.earth { background: #3366cc; }
+</style>
+</head>
+<body>
+<h1>Ashura's Light 2</h1>
+<p>Lunar south-pole site geometry navigator. Terrain-free centre-direction only.</p>
+{% if not kernels_ok %}
+<p class="warning">Kernels not loaded. Place the DE421 stack in the kernels/ directory. See docs/KERNEL_MANIFEST.md.</p>
+{% endif %}
+<form id="form">
+  <label>East longitude (degrees) <input name="lon" type="number" step="any" value="0" required></label>
+  <label>Latitude (degrees, positive north) <input name="lat" type="number" step="any" value="-89.9" required></label>
+  <label>Altitude above 1737.4 km sphere (km) <input name="alt" type="number" step="any" value="0"></label>
+  <label>UTC date-time <input name="utc" type="text" value="2026-11-15 00:00:00 UTC" required></label>
+  <button type="submit">Calculate</button>
+</form>
+<div id="out"></div>
+<script>
+document.getElementById("form").onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = {
+    lon: parseFloat(fd.get("lon")),
+    lat: parseFloat(fd.get("lat")),
+    alt: parseFloat(fd.get("alt") || 0),
+    utc: fd.get("utc")
+  };
+  const res = await fetch("/api/compute", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  const out = document.getElementById("out");
+  if (data.error) {
+    out.innerHTML = `<p class="warning">${data.error}</p>`;
+    return;
+  }
+  const s = data.sun, e = data.earth;
+  out.innerHTML = `
+    <div class="result">
+      <h2>Results for ${s.site_lat_deg}° N, ${s.site_lon_deg}° E at ${s.utc}</h2>
+      <p><strong>Sun</strong>: azimuth ${s.azimuth_deg.toFixed(4)}°, elevation ${s.elevation_deg.toFixed(4)}°</p>
+      <p><strong>Earth</strong>: azimuth ${e.azimuth_deg.toFixed(4)}°, elevation ${e.elevation_deg.toFixed(4)}°</p>
+      <div class="horizon" title="Simple horizon view. Centre is zenith; bottom is horizon.">
+        <div class="marker sun" style="left:${(s.azimuth_deg/360)*100}%; bottom:${Math.max(0,s.elevation_deg)*1.2}px;" title="Sun"></div>
+        <div class="marker earth" style="left:${(e.azimuth_deg/360)*100}%; bottom:${Math.max(0,e.elevation_deg)*1.2}px;" title="Earth"></div>
+      </div>
+      <p><em>Yellow = Sun, blue = Earth. Horizontal position ≈ azimuth; height ≈ elevation above horizon. Explanatory only.</em></p>
+      <p class="warning">${s.limitations}</p>
+      <p>Frame: ${data.provenance.frame}. Correction: ${data.provenance.correction}. Radius: ${data.provenance.radius_km} km.</p>
+      <button onclick="exportJSON()">Export JSON</button>
+    </div>`;
+  window._last = data;
+};
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(window._last, null, 2)], {type: "application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "al2-result.json";
+  a.click();
+}
+</script>
+</body>
+</html>
