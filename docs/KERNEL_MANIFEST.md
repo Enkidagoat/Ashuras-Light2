@@ -13,12 +13,12 @@ Place these unmodified files in a `kernels/` directory (or set `AL2_KERNEL_DIR`)
 | moon_pa_de421_1900-2050.bpc | `pck/moon_pa_de421_1900-2050.bpc` | `656f90616403d75a75f0cd6c8830fc5b44f8cb4facb5ccb8915e752b397520cf` |
 | de421.bsp | `spk/planets/a_old_versions/de421.bsp` | `08b20db2ae22488650641c5a9033e5bfda4b1c4b440cfeaf20f621cfa18ecdb3` |
 
-## Acquisition
-Use the [official NAIF generic kernels archive](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/) and the relative paths above. Verify every file's SHA-256 before use. For example, in PowerShell, run `Get-FileHash .\kernels\* -Algorithm SHA256` and compare the results with this manifest. `load_kernels` loads files in the required order.
+## Acquisition and verification
+`scripts/bootstrap_kernels.py` reads the five filenames, archive paths, and hashes from this table. It downloads each file to a temporary file, verifies its SHA-256, then atomically moves the verified file into place. A failed or mismatched download does not replace an existing kernel.
+
+The application reads this same table and checks that the kernel directory contains exactly these five regular files with matching hashes before loading any of them into SPICE. Missing, modified, symlinked, or extra entries prevent calculation. `load_kernels` loads the verified files in manifest order.
 
 NAIF's [SPICE use rules](https://naif.jpl.nasa.gov/naif/rules.html) state that kernels on its server may be downloaded and used by anyone, and may be redistributed if unmodified. The application's MIT license does not apply to kernels. Files from other sources may have different terms.
-
-No automatic downloader is implemented; users provide local kernel files.
 
 ## Frame
 MOON_ME_DE421  
