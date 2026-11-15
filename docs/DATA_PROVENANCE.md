@@ -1,13 +1,23 @@
 # Data Provenance — Ashura's Light 2
 
-**Status:** UNRESOLVED.
+**Status:** Requirements established. Sources UNRESOLVED.
 
-No data sources have been identified or approved by the owner.
-
-## Required for any future data use
+## Required for every result
 - Source and version
-- License / permitted use
+- Coordinate reference frame
+- Time standard
+- Calculation method
+- Units
 - Limitations
-- Missing-data behavior
+- Missing-data status
 
-No data will be used until provenance is documented and owner-approved.
+## Candidate data needs
+- Ephemeris data sufficient for Sun and Earth centre-direction geometry from a lunar surface point.
+- Site coordinates supplied by the user.
+
+## Unresolved
+- Specific approved sources (e.g., Horizons, SPICE kernels, or other)
+- License / permitted use
+- Version pinning strategy
+
+No data source is approved. No previous project datasets will be imported without explicit source review and owner approval.
