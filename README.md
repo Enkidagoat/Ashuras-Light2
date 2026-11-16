@@ -77,7 +77,26 @@ Without kernels, kernel-dependent tests are skipped.
 - [Kernel files, download, and verification](docs/KERNEL_MANIFEST.md)
 - [Docker quick start](docs/JUDGE_QUICKSTART.md)
 - [Kernel third-party notice](docs/KERNEL_NOTICES.md)
-- [Screenshots](docs/screenshots/al2-test-03-desktop-final.png)
+
+## Screenshots
+
+These screenshots were captured from the running application using real calculation results.
+
+### Desktop
+
+![Desktop application landing view](docs/screenshots/al2-test-03-desktop-final.png)
+
+![Desktop 30-day sweep with results and timeline](docs/screenshots/al2-sweep-desktop.png)
+
+![Sweep statistics and elevation timeline](docs/screenshots/al2-sweep-stats-timeline-desktop.png)
+
+![Four-site comparison table](docs/screenshots/al2-comparison-desktop.png)
+
+### Mobile
+
+![Mobile application view with calculated results](docs/screenshots/al2-test-03-mobile-final.png)
+
+![Mobile sweep results and internally scrollable comparison](docs/screenshots/al2-sweep-mobile.png)
 
 ## License
 
