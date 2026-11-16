@@ -55,7 +55,13 @@ def api_compute():
 @app.route("/api/sweep", methods=["POST"])
 def api_sweep():
     if not KERNELS_OK:
-        return jsonify({"error": "Kernels not loaded. See docs/KERNEL_MANIFEST.md"}), 503
+        return jsonify({
+            "error": (
+                "Verified kernels are unavailable. From the project folder, run "
+                "'python scripts/bootstrap_kernels.py', then restart the app. If "
+                "you use another kernel folder, set AL2_KERNEL_DIR before launch."
+            )
+        }), 503
     data = request.get_json(force=True)
     try:
         lon = float(data["lon"])

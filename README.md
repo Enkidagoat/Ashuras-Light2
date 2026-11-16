@@ -1,91 +1,84 @@
 # Ashura's Light 2
 
-Ashura's Light 2 is a lunar south-pole geometry navigator. Given a site and UTC time, it calculates terrain-free centre-direction azimuth and elevation for the Sun and Earth using the pinned DE421 SPICE kernel stack.
+A lunar south-pole geometry tool. Enter a site and UTC time to calculate terrain-free, geometric centre-direction azimuth and elevation for the Sun and Earth. The 30-day sweep samples those elevations hourly and reports the share of samples above the local horizon.
 
-- Site input (signed latitude and longitude)
-- UTC date-time
-- Geometric centre-direction Sun and Earth AZ/EL
-- Labeled horizon plot (markers below the line are below the horizon)
-- Comparison of up to four saved evaluations
-- 30-day viability sweep: % time Sun up (power proxy), % time Earth visible (comms proxy), countdowns to next sunset/Earthset
-- Timeline chart of Sun and Earth elevation over the sweep
-- Preset sites dropdown (Shackleton rim, Malapert Massif, Artemis III regions, etc.)
-- JSON export with provenance
-- Explicit limitations
+These are geometry results, not predictions of usable power, working communications, terrain visibility, or landing safety.
 
-## Screenshots
-![Desktop application showing results, comparison table, and provenance](docs/screenshots/al2-test-03-desktop-final.png)
+## Run with Python
 
-![390 px mobile application showing results, comparison table, and provenance](docs/screenshots/al2-test-03-mobile-final.png)
+Requirements: Python 3.10 or later and an internet connection to download the kernels.
 
-## Installation
+From the project folder:
+
 ```bash
 python -m venv .venv
+```
+
+Activate the environment:
+
+```bash
+# macOS / Linux
 source .venv/bin/activate
-pip install -r requirements.txt
 ```
 
-## Kernel acquisition
+```powershell
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
+```
+
+Then install dependencies, download and verify the kernels, and start the app:
+
 ```bash
+python -m pip install -r requirements.txt
 python scripts/bootstrap_kernels.py
-```
-This downloads the five NAIF files listed in `docs/KERNEL_MANIFEST.md` into `kernels/`. Each download is staged in a temporary file, hash-checked, and atomically moved into place; a mismatch leaves any existing destination file untouched.
-
-```bash
-export AL2_KERNEL_DIR=kernels
-python app.py
-```
-Open http://127.0.0.1:5000
-
-On Windows PowerShell:
-```powershell
-$env:AL2_KERNEL_DIR = (Resolve-Path .\kernels).Path
 python app.py
 ```
 
-The application re-reads the manifest and verifies all five hashes before loading any kernel into SPICE. The kernel directory must contain exactly the five manifest-listed regular files; missing, modified, symlinked, or extra entries prevent calculations. To provide kernels yourself, place the unmodified files from the manifest in that directory. The application does not calculate with a partially loaded or unverified stack.
+Open <http://127.0.0.1:5000>. Keep the app running while you use it; stop it with Ctrl+C. If you download the kernels after starting the app, stop and restart the app so it loads them.
 
-To acquire and launch in PowerShell:
-```powershell
-python scripts\bootstrap_kernels.py
-$env:AL2_KERNEL_DIR = (Resolve-Path .\kernels).Path
-python .\app.py
-```
+The download command places kernels in `kernels/` by default. The app verifies the five files against [the kernel manifest](docs/KERNEL_MANIFEST.md) before calculating. It will not run calculations with missing, modified, or extra files. If you already have the verified files in another folder, set `AL2_KERNEL_DIR` to that folder before starting the app.
 
-## Docker
+## Run with Docker
+
+From the project folder, build and run:
+
 ```bash
-docker build -t al2 .
-docker run -p 127.0.0.1:5000:5000 al2
+docker build -t ashuras-light2 .
+docker run --rm -p 127.0.0.1:5000:5000 ashuras-light2
 ```
-The image downloads and verifies kernels at build time. The application listens on `0.0.0.0:5000`; the loopback-only host binding keeps the published port local.
 
-## Offline judge distribution
-The prebuilt archive is `dist/ashura-light2-judge.tar`; verify it with `dist/SHA256SUMS`. See [docs/JUDGE_QUICKSTART.md](docs/JUDGE_QUICKSTART.md) for the load and launch procedure. The distribution includes the verified kernels; no kernel download or NAIF network access is needed at runtime. Third-party terms are documented separately in [docs/KERNEL_NOTICES.md](docs/KERNEL_NOTICES.md).
+The build needs an internet connection to download dependencies and kernels. The running container does not download anything. Open <http://127.0.0.1:5000>.
 
-## Scientific methodology
-- Frame: MOON_ME_DE421
-- Correction: NONE (geometric)
-- Reference radius: 1737.4 km
-- Azimuth: clockwise from north
-- Elevation: relative to local horizontal plane
+## Offline judge package
 
-## Example calculation
-At longitude 0°, latitude -89.9°, altitude 0 km, and `2026-11-15 00:00:00 UTC`:
+The prebuilt Docker archive is not stored in this source repository and must be provided separately. If it is included with your submission, follow the [offline judge quick start](docs/JUDGE_QUICKSTART.md) to verify, load, and run it. Do not expect a clone of this repository alone to contain the archive.
 
-| Body | Azimuth | Elevation |
-|---|---:|---:|
-| Sun | 114.4394° | +1.5150° |
-| Earth | 357.3804° | -3.4530° |
+## What it does
 
-These are geometric centre-direction results; the Earth is below the zero-degree horizon in this example.
+- Calculates Sun and Earth azimuth/elevation at a site and UTC time.
+- Shows a horizon plot and compares up to four single-epoch calculations.
+- Samples the next 30 days hourly, plots both elevations, and reports the percentage of samples above zero degrees and the next sampled set time.
+- Includes preset candidate coordinates (some marked approximate) and exports the latest single-epoch result as JSON.
 
-## Limitations
-Terrain-free centre-direction geometry only. Does not establish usable electrical power, operational communication availability, terrain-masked visibility, or landing safety.
+The method uses the DE421 SPICE kernels, `MOON_ME_DE421` frame, geometric correction (`NONE`), and a 1737.4 km reference radius. Details and limitations are shown in the app.
 
 ## Tests
+
+After installing dependencies and downloading kernels, run:
+
 ```bash
-pytest tests/
+python -m pytest -q
 ```
 
+Without kernels, kernel-dependent tests are skipped.
+
+## Further information
+
+- [Kernel files, download, and verification](docs/KERNEL_MANIFEST.md)
+- [Docker quick start](docs/JUDGE_QUICKSTART.md)
+- [Kernel third-party notice](docs/KERNEL_NOTICES.md)
+- [Screenshots](docs/screenshots/al2-test-03-desktop-final.png)
+
 ## License
-MIT. Kernels are separate and subject to NAIF redistribution terms.
+
+Project code is MIT-licensed. NAIF kernels have separate terms; see [the notice](docs/KERNEL_NOTICES.md).
