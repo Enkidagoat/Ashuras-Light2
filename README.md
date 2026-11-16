@@ -2,12 +2,14 @@
 
 Ashura's Light 2 is a lunar south-pole geometry navigator. Given a site and UTC time, it calculates terrain-free centre-direction azimuth and elevation for the Sun and Earth using the pinned DE421 SPICE kernel stack.
 
-## Features
 - Site input (signed latitude and longitude)
 - UTC date-time
 - Geometric centre-direction Sun and Earth AZ/EL
 - Labeled horizon plot (markers below the line are below the horizon)
 - Comparison of up to four saved evaluations
+- 30-day viability sweep: % time Sun up (power proxy), % time Earth visible (comms proxy), countdowns to next sunset/Earthset
+- Timeline chart of Sun and Earth elevation over the sweep
+- Preset sites dropdown (Shackleton rim, Malapert Massif, Artemis III regions, etc.)
 - JSON export with provenance
 - Explicit limitations
 

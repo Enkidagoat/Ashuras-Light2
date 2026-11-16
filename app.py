@@ -52,5 +52,33 @@ def api_compute():
         return jsonify({"error": str(exc)}), 400
 
 
+@app.route("/api/sweep", methods=["POST"])
+def api_sweep():
+    if not KERNELS_OK:
+        return jsonify({"error": "Kernels not loaded. See docs/KERNEL_MANIFEST.md"}), 503
+    data = request.get_json(force=True)
+    try:
+        lon = float(data["lon"])
+        lat = float(data["lat"])
+        utc = data["utc"]
+        alt = float(data.get("alt", 0.0))
+        days = int(data.get("days", 30))
+        step = float(data.get("step_hours", 1.0))
+        if not (1 <= days <= 90):
+            return jsonify({"error": "days must be between 1 and 90"}), 400
+        if not (0.25 <= step <= 24):
+            return jsonify({"error": "step_hours must be between 0.25 and 24"}), 400
+        result = sweep(lon, lat, utc, days, step, alt)
+        result["provenance"] = {
+            "frame": "MOON_ME_DE421",
+            "correction": "NONE (geometric)",
+            "radius_km": 1737.4,
+            "kernels": "DE421 stack (see KERNEL_MANIFEST.md)",
+        }
+        return jsonify(result)
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)

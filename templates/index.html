@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Ashura's Light 2 — Lunar South-Pole Geometry</title>
+<title>Ashura's Light 2 — Is Your Site Still Viable?</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 :root { --bg:#0c0a08; --panel:#161310; --sun:#e8a838; --earth:#c47a4a; --text:#f0ebe4; --muted:#9a9186; --warn:#c45c5c; }
@@ -14,14 +14,14 @@ h1 { font-size:1.4rem; letter-spacing:0.04em; margin:0; }
 @media (max-width:700px){ .grid { grid-template-columns:1fr; } }
 .panel { background:var(--panel); border:1px solid #2a241c; border-radius:6px; padding:1rem; }
 label { display:block; font-size:0.75rem; color:var(--muted); margin-top:0.6rem; }
-input, button { background:#0e0c0a; color:var(--text); border:1px solid #3a3228; padding:0.45rem; width:100%; box-sizing:border-box; font-size:1rem; }
+input, select, button { background:#0e0c0a; color:var(--text); border:1px solid #3a3228; padding:0.45rem; width:100%; box-sizing:border-box; font-size:1rem; }
 button { background:var(--sun); color:#111; font-weight:600; cursor:pointer; margin-top:0.8rem; border:none; }
 .result-cards { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; }
 .sun { border-top:3px solid var(--sun); }
 .earth { border-top:3px solid var(--earth); }
 .azel { font-size:1.6rem; font-weight:600; }
 .azel span { font-size:0.8rem; color:var(--muted); display:block; }
-#plot { width:100%; height:220px; background:#0e0c0a; border:1px solid #3a3228; margin-top:0.75rem; }
+#plot, #timeline { width:100%; height:220px; background:#0e0c0a; border:1px solid #3a3228; margin-top:0.75rem; }
 table { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.5rem; }
 .table-scroll { max-width:100%; overflow-x:auto; }
 .table-scroll:focus-visible { outline:2px solid var(--sun); outline-offset:2px; }
@@ -29,12 +29,14 @@ table { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.5r
 th, td { border-bottom:1px solid #2a241c; padding:0.4rem 0.3rem; text-align:left; }
 .warning { color:var(--warn); font-size:0.8rem; }
 details { margin-top:0.75rem; font-size:0.85rem; }
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-top:0.75rem; font-size:0.9rem; }
+.stat { background:#0e0c0a; padding:0.5rem; border-radius:4px; }
 </style>
 </head>
 <body>
 <h1>ASHURA'S LIGHT 2</h1>
-<div class="sub">LUNAR SOUTH-POLE GEOMETRY &nbsp;|&nbsp; ENGINE VERIFIED</div>
-<div class="banner">Terrain-free centre-direction geometry only. Does not establish usable power, operational communications, terrain visibility, or landing safety.</div>
+<div class="sub">LUNAR SOUTH-POLE GEOMETRY &nbsp;|&nbsp; VIABILITY CHECK</div>
+<div class="banner">Launch slipped two weeks — is your south-pole site still viable for power and communications?</div>
 {% if not kernels_ok %}
 <div class="banner">Kernels not loaded. Run <code>python scripts/bootstrap_kernels.py</code> or set AL2_KERNEL_DIR.</div>
 {% endif %}
@@ -43,24 +45,37 @@ details { margin-top:0.75rem; font-size:0.85rem; }
   <div class="panel">
     <h3>01 — Observation parameters</h3>
     <form id="form">
+      <label>PRESET SITE</label>
+      <select id="preset" name="preset">
+        <option value="">Custom</option>
+        <option value="-89.67,129.78">Shackleton rim (-89.67°, 129.78°E)</option>
+        <option value="-85.98,-1.67">Malapert Massif (-85.98°, 1.67°W)</option>
+        <option value="-89.5,0">de Gerlache Rim 2 (approx)</option>
+        <option value="-87.5,0">Haworth (approx)</option>
+        <option value="-85.5,30">Nobile Rim 1 (approx)</option>
+        <option value="-89.9,0">Near south pole (-89.9°, 0°)</option>
+      </select>
       <label>LATITUDE (°, +N)</label>
       <input name="lat" type="number" step="any" value="-89.9" required>
       <label>LONGITUDE (°, +E)</label>
       <input name="lon" type="number" step="any" value="0" required>
       <label>ALTITUDE (km above 1737.4 km sphere)</label>
       <input name="alt" type="number" step="any" value="0">
-      <label>UTC</label>
+      <label>UTC (start of sweep or single epoch)</label>
       <input name="utc" type="text" value="2026-11-15 00:00:00 UTC" required>
-      <button type="submit">Calculate & Save</button>
+      <button type="submit">Calculate Single Epoch</button>
+      <button type="button" id="sweep">30-Day Viability Sweep</button>
     </form>
   </div>
 
   <div class="panel" id="results">
     <h3>02 — Local sky geometry</h3>
-    <p class="sub">Azimuth / elevation &nbsp;|&nbsp; Geometric</p>
+    <p class="sub">Azimuth / elevation &nbsp;|&nbsp; Geometric &nbsp;|&nbsp; Power & comms proxy</p>
     <div id="cards"></div>
     <canvas id="plot"></canvas>
-    <p class="sub">Zero-degree horizon marked. Amber = Sun, copper = Earth. Markers below the line are below the horizon.</p>
+    <p class="sub">Zero-degree horizon marked. Amber = Sun (power), copper = Earth (comms). Markers below the line are below the horizon.</p>
+    <div id="sweep-stats"></div>
+    <canvas id="timeline"></canvas>
   </div>
 </div>
 
@@ -82,7 +97,17 @@ details { margin-top:0.75rem; font-size:0.85rem; }
 const saved = [];
 let last = null;
 const plot = document.getElementById("plot");
+const timeline = document.getElementById("timeline");
 const ctx = plot.getContext("2d");
+const tctx = timeline.getContext("2d");
+
+document.getElementById("preset").onchange = (e) => {
+  const val = e.target.value;
+  if (!val) return;
+  const [lat, lon] = val.split(",").map(parseFloat);
+  document.querySelector("[name=lat]").value = lat;
+  document.querySelector("[name=lon]").value = lon;
+};
 
 function drawPlot(sun, earth) {
   const cssW = plot.clientWidth || 300;
@@ -109,6 +134,39 @@ function drawPlot(sun, earth) {
   }
   if (sun) mark(sun.azimuth_deg, sun.elevation_deg, "#e8a838");
   if (earth) mark(earth.azimuth_deg, earth.elevation_deg, "#c47a4a");
+}
+
+function drawTimeline(times, sunEls, earthEls) {
+  const cssW = timeline.clientWidth || 300;
+  const cssH = 220;
+  timeline.width = cssW;
+  timeline.height = cssH;
+  const w = cssW, h = cssH;
+  tctx.clearRect(0,0,w,h);
+  tctx.fillStyle = "#0e0c0a";
+  tctx.fillRect(0,0,w,h);
+  if (!times || times.length < 2) return;
+  const minEl = Math.min(...sunEls, ...earthEls, -5);
+  const maxEl = Math.max(...sunEls, ...earthEls, 5);
+  const range = maxEl - minEl || 1;
+  const hy = h - ((0 - minEl) / range) * (h - 20) - 10;
+  tctx.strokeStyle = "#5a5046";
+  tctx.beginPath(); tctx.moveTo(0, hy); tctx.lineTo(w, hy); tctx.stroke();
+  tctx.fillStyle = "#9a9186";
+  tctx.font = "11px sans-serif";
+  tctx.fillText("0°", 4, hy - 4);
+  function line(els, color) {
+    tctx.strokeStyle = color;
+    tctx.beginPath();
+    els.forEach((el, i) => {
+      const x = (i / (els.length - 1)) * w;
+      const y = h - ((el - minEl) / range) * (h - 20) - 10;
+      if (i === 0) tctx.moveTo(x, y); else tctx.lineTo(x, y);
+    });
+    tctx.stroke();
+  }
+  line(sunEls, "#e8a838");
+  line(earthEls, "#c47a4a");
 }
 
 window.addEventListener("resize", () => { if (last) drawPlot(last.sun, last.earth); });
@@ -138,6 +196,42 @@ document.getElementById("form").onsubmit = async (e) => {
   renderCards(data);
   drawPlot(data.sun, data.earth);
   renderComparison();
+  document.getElementById("sweep-stats").innerHTML = "";
+  drawTimeline(null, null, null);
+};
+
+document.getElementById("sweep").onclick = async () => {
+  const form = document.getElementById("form");
+  const fd = new FormData(form);
+  const body = {
+    lon: parseFloat(fd.get("lon")),
+    lat: parseFloat(fd.get("lat")),
+    alt: parseFloat(fd.get("alt") || 0),
+    utc: fd.get("utc"),
+    days: 30,
+    step_hours: 1.0
+  };
+  const res = await fetch("/api/sweep", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (data.error) {
+    document.getElementById("sweep-stats").innerHTML = `<p class="warning">${data.error}</p>`;
+    return;
+  }
+  const sunset = data.next_sunset_hours != null ? data.next_sunset_hours.toFixed(1) + " h" : "none in window";
+  const earthset = data.next_earthset_hours != null ? data.next_earthset_hours.toFixed(1) + " h" : "none in window";
+  document.getElementById("sweep-stats").innerHTML = `
+    <div class="stats">
+      <div class="stat">Sun up (power proxy): <strong>${data.sun_up_percent}%</strong></div>
+      <div class="stat">Earth visible (comms proxy): <strong>${data.earth_visible_percent}%</strong></div>
+      <div class="stat">Next sunset: <strong>${sunset}</strong></div>
+      <div class="stat">Next Earthset: <strong>${earthset}</strong></div>
+    </div>
+    <p class="sub">30-day geometric sweep from ${data.start_utc}. Amber = Sun elevation, copper = Earth elevation.</p>`;
+  drawTimeline(data.times, data.sun_elevations, data.earth_elevations);
 };
 
 function renderCards(d) {
@@ -145,12 +239,12 @@ function renderCards(d) {
   document.getElementById("cards").innerHTML = `
     <div class="result-cards">
       <div class="panel sun">
-        <div class="sub">SUN</div>
+        <div class="sub">SUN (power)</div>
         <div class="azel">${s.azimuth_deg.toFixed(2)}° <span>Azimuth</span></div>
         <div class="azel">${s.elevation_deg.toFixed(2)}° <span>Elevation</span></div>
       </div>
       <div class="panel earth">
-        <div class="sub">EARTH</div>
+        <div class="sub">EARTH (comms)</div>
         <div class="azel">${e.azimuth_deg.toFixed(2)}° <span>Azimuth</span></div>
         <div class="azel">${e.elevation_deg.toFixed(2)}° <span>Elevation</span></div>
       </div>
@@ -160,7 +254,7 @@ function renderCards(d) {
 
 function renderComparison() {
   if (saved.length < 2) {
-    document.getElementById("comparison").innerHTML = "<p class=\"sub\">Calculate at least two to compare.</p>";
+    document.getElementById("comparison").innerHTML = '<p class="sub">Calculate at least two to compare.</p>';
     return;
   }
   let rows = saved.map((d,i) => `
@@ -190,6 +284,7 @@ document.getElementById("export").onclick = () => {
 };
 
 drawPlot(null, null);
+drawTimeline(null, null, null);
 </script>
 </body>
 </html>
