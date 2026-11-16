@@ -23,6 +23,9 @@ button { background:var(--sun); color:#111; font-weight:600; cursor:pointer; mar
 .azel span { font-size:0.8rem; color:var(--muted); display:block; }
 #plot, #timeline { width:100%; height:220px; background:#0e0c0a; border:1px solid #3a3228; margin-top:0.75rem; }
 table { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.5rem; }
+.table-scroll { max-width:100%; overflow-x:auto; }
+.table-scroll:focus-visible { outline:2px solid var(--sun); outline-offset:2px; }
+.table-scroll table { min-width:42rem; }
 th, td { border-bottom:1px solid #2a241c; padding:0.4rem 0.3rem; text-align:left; }
 .warning { color:var(--warn); font-size:0.8rem; }
 details { margin-top:0.75rem; font-size:0.85rem; }
@@ -263,10 +266,12 @@ function renderComparison() {
       <td>${d.earth.azimuth_deg.toFixed(3)} / ${d.earth.elevation_deg.toFixed(3)}</td>
     </tr>`).join("");
   document.getElementById("comparison").innerHTML = `
-    <table>
-      <tr><th>#</th><th>Lat, Lon</th><th>UTC</th><th>Sun AZ / EL</th><th>Earth AZ / EL</th></tr>
-      ${rows}
-    </table>`;
+    <div class="table-scroll" role="region" aria-label="Evaluation comparison" tabindex="0">
+      <table>
+        <tr><th>#</th><th>Lat, Lon</th><th>UTC</th><th>Sun AZ / EL</th><th>Earth AZ / EL</th></tr>
+        ${rows}
+      </table>
+    </div>`;
 }
 
 document.getElementById("export").onclick = () => {

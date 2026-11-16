@@ -1,1 +1,4 @@
-src/al2/__pycache__/
+/dist/
+__pycache__/
+**/__pycache__/
+.pytest_cache/

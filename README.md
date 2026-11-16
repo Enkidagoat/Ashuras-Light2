@@ -13,8 +13,10 @@ Ashura's Light 2 is a lunar south-pole geometry navigator. Given a site and UTC 
 - JSON export with provenance
 - Explicit limitations
 
-## Problem framing
-The interface leads with the planner question: “Launch slipped two weeks — is your south-pole site still viable for power and communications?” rather than file-integrity checks.
+## Screenshots
+![Desktop application showing results, comparison table, and provenance](docs/screenshots/al2-test-03-desktop-final.png)
+
+![390 px mobile application showing results, comparison table, and provenance](docs/screenshots/al2-test-03-mobile-final.png)
 
 ## Installation
 ```bash
@@ -27,7 +29,7 @@ pip install -r requirements.txt
 ```bash
 python scripts/bootstrap_kernels.py
 ```
-This downloads the five pinned NAIF files into `kernels/` and verifies every SHA-256 against `docs/KERNEL_MANIFEST.md`. It exits non-zero on any mismatch.
+This downloads the five NAIF files listed in `docs/KERNEL_MANIFEST.md` into `kernels/`. Each download is staged in a temporary file, hash-checked, and atomically moved into place; a mismatch leaves any existing destination file untouched.
 
 ```bash
 export AL2_KERNEL_DIR=kernels
@@ -41,12 +43,24 @@ $env:AL2_KERNEL_DIR = (Resolve-Path .\kernels).Path
 python app.py
 ```
 
+The application re-reads the manifest and verifies all five hashes before loading any kernel into SPICE. The kernel directory must contain exactly the five manifest-listed regular files; missing, modified, symlinked, or extra entries prevent calculations. To provide kernels yourself, place the unmodified files from the manifest in that directory. The application does not calculate with a partially loaded or unverified stack.
+
+To acquire and launch in PowerShell:
+```powershell
+python scripts\bootstrap_kernels.py
+$env:AL2_KERNEL_DIR = (Resolve-Path .\kernels).Path
+python .\app.py
+```
+
 ## Docker
 ```bash
 docker build -t al2 .
-docker run -p 5000:5000 al2
+docker run -p 127.0.0.1:5000:5000 al2
 ```
-The image downloads and verifies kernels at build time. The application listens on `0.0.0.0:5000`.
+The image downloads and verifies kernels at build time. The application listens on `0.0.0.0:5000`; the loopback-only host binding keeps the published port local.
+
+## Offline judge distribution
+The prebuilt archive is `dist/ashura-light2-judge.tar`; verify it with `dist/SHA256SUMS`. See [docs/JUDGE_QUICKSTART.md](docs/JUDGE_QUICKSTART.md) for the load and launch procedure. The distribution includes the verified kernels; no kernel download or NAIF network access is needed at runtime. Third-party terms are documented separately in [docs/KERNEL_NOTICES.md](docs/KERNEL_NOTICES.md).
 
 ## Scientific methodology
 - Frame: MOON_ME_DE421
@@ -54,6 +68,16 @@ The image downloads and verifies kernels at build time. The application listens 
 - Reference radius: 1737.4 km
 - Azimuth: clockwise from north
 - Elevation: relative to local horizontal plane
+
+## Example calculation
+At longitude 0°, latitude -89.9°, altitude 0 km, and `2026-11-15 00:00:00 UTC`:
+
+| Body | Azimuth | Elevation |
+|---|---:|---:|
+| Sun | 114.4394° | +1.5150° |
+| Earth | 357.3804° | -3.4530° |
+
+These are geometric centre-direction results; the Earth is below the zero-degree horizon in this example.
 
 ## Limitations
 Terrain-free centre-direction geometry only. Does not establish usable electrical power, operational communication availability, terrain-masked visibility, or landing safety.

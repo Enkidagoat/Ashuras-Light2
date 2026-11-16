@@ -6,25 +6,23 @@ from a lunar surface site using the DE421 / MOON_ME_DE421 stack.
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
+from pathlib import Path
 
 import numpy as np
 import spiceypy as spice
 
-# Pinned kernel filenames (SHA-256 recorded in docs/KERNEL_MANIFEST.md)
-KERNEL_FILES = [
-    "naif0012.tls",
-    "pck00011.tpc",
-    "moon_080317.tf",
-    "moon_pa_de421_1900-2050.bpc",
-    "de421.bsp",
-]
+from .kernel_manifest import (
+    DEFAULT_MANIFEST_PATH,
+    KernelIntegrityError,
+    verify_kernel_directory,
+)
 
 FRAME = "MOON_ME_DE421"
 REFERENCE_RADIUS_KM = 1737.4
 CORRECTION = "NONE"  # geometric; documented
+_KERNELS_LOADED = False
 
 
 @dataclass
@@ -43,17 +41,22 @@ class Result:
     limitations: str
 
 
-def load_kernels(kernel_dir: str) -> None:
-    """Load the pinned DE421 stack. Caller must supply the directory."""
+def load_kernels(
+    kernel_dir: str | Path,
+    manifest_path: str | Path = DEFAULT_MANIFEST_PATH,
+) -> None:
+    """Verify the complete manifest-listed stack before loading any SPICE kernels."""
+    global _KERNELS_LOADED
+    _KERNELS_LOADED = False
     spice.kclear()
-    for name in KERNEL_FILES:
-        path = os.path.join(kernel_dir, name)
-        if not os.path.isfile(path):
-            raise FileNotFoundError(
-                f"Required kernel missing: {path}. "
-                "See docs/KERNEL_MANIFEST.md for acquisition instructions."
-            )
-        spice.furnsh(path)
+    try:
+        kernel_paths = verify_kernel_directory(kernel_dir, manifest_path)
+        for path in kernel_paths:
+            spice.furnsh(str(path))
+    except Exception:
+        spice.kclear()
+        raise
+    _KERNELS_LOADED = True
 
 
 def site_vector(lon_deg: float, lat_deg: float, alt_km: float = 0.0) -> np.ndarray:
@@ -86,6 +89,8 @@ def compute(
     alt_km: float = 0.0,
 ) -> Result:
     """Geometric centre-direction AZ/EL for SUN or EARTH."""
+    if not _KERNELS_LOADED:
+        raise KernelIntegrityError("Verified kernels have not been loaded")
     if target not in ("SUN", "EARTH"):
         raise ValueError("target must be SUN or EARTH")
     et = spice.str2et(utc)

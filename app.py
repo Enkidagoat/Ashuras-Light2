@@ -1,8 +1,10 @@
 """Minimal web application for Ashura's Light 2."""
 
-from flask import Flask, jsonify, render_template, request
-from src.al2.geometry import compute, load_kernels, sweep
 import os
+
+from flask import Flask, jsonify, render_template, request
+from src.al2.geometry import compute, load_kernels
+from src.al2.kernel_manifest import KernelIntegrityError
 
 app = Flask(__name__)
 
@@ -11,7 +13,8 @@ KERNEL_DIR = os.environ.get("AL2_KERNEL_DIR", "kernels")
 try:
     load_kernels(KERNEL_DIR)
     KERNELS_OK = True
-except FileNotFoundError as exc:
+    KERNEL_ERROR = None
+except KernelIntegrityError as exc:
     KERNELS_OK = False
     KERNEL_ERROR = str(exc)
 
@@ -24,7 +27,9 @@ def index():
 @app.route("/api/compute", methods=["POST"])
 def api_compute():
     if not KERNELS_OK:
-        return jsonify({"error": "Kernels not loaded. See docs/KERNEL_MANIFEST.md"}), 503
+        return jsonify({
+            "error": KERNEL_ERROR or "Kernels not loaded. See docs/KERNEL_MANIFEST.md"
+        }), 503
     data = request.get_json(force=True)
     try:
         lon = float(data["lon"])
