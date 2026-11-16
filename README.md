@@ -80,23 +80,19 @@ Without kernels, kernel-dependent tests are skipped.
 
 ## Screenshots
 
-These screenshots were captured from the running application using real calculation results.
+Product screenshots include the interface, results, comparison, and provenance views.
 
-### Desktop
+![Application inputs](docs/screenshots/01-inputs.png)
 
-![Desktop application landing view](docs/screenshots/al2-test-03-desktop-final.png)
+![Horizon results](docs/screenshots/02-horizon-results.png)
 
-![Desktop 30-day sweep with results and timeline](docs/screenshots/al2-sweep-desktop.png)
+![Four-date site comparison](docs/screenshots/03-four-date-comparison.png)
 
-![Sweep statistics and elevation timeline](docs/screenshots/al2-sweep-stats-timeline-desktop.png)
+![Provenance and limitations](docs/screenshots/04-provenance-limitations.png)
 
-![Four-site comparison table](docs/screenshots/al2-comparison-desktop.png)
+![30-day sweep statistics and elevation timeline](docs/screenshots/al2-sweep-desktop.png)
 
-### Mobile
-
-![Mobile application view with calculated results](docs/screenshots/al2-test-03-mobile-final.png)
-
-![Mobile sweep results and internally scrollable comparison](docs/screenshots/al2-sweep-mobile.png)
+![Mobile 30-day sweep results and internally scrollable comparison](docs/screenshots/al2-sweep-mobile.png)
 
 ## License
 
