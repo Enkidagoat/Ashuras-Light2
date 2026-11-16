@@ -251,7 +251,7 @@ function renderCards(d) {
 
 function renderComparison() {
   if (saved.length < 2) {
-    document.getElementById("comparison").innerHTML = "<p class=\\"sub\\">Calculate at least two to compare.</p>";
+    document.getElementById("comparison").innerHTML = '<p class="sub">Calculate at least two to compare.</p>';
     return;
   }
   let rows = saved.map((d,i) => `
