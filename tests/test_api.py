@@ -54,6 +54,11 @@ def test_sweep_ok(client):
     assert "earth_visible_percent" in data
     assert "times" in data
     assert len(data["times"]) > 0
+    # Endpoint must return real timestamps, not a placeholder
+    assert data["times"][0].startswith("2026-11-15")
+    assert "next_sunset_hours" in data or data.get("next_sunset_hours") is None
+    assert "sun_elevations" in data
+    assert len(data["sun_elevations"]) == len(data["times"])
 
 
 def test_sweep_bad_input(client):

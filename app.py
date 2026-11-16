@@ -3,7 +3,7 @@
 import os
 
 from flask import Flask, jsonify, render_template, request
-from src.al2.geometry import compute, load_kernels
+from src.al2.geometry import compute, load_kernels, sweep
 from src.al2.kernel_manifest import KernelIntegrityError
 
 app = Flask(__name__)
