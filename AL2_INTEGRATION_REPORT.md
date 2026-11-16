@@ -1,116 +1,82 @@
 # AL2 Integration Report
 
-- **Project:** Ashura's Light 2
-- **Phase:** AL2-INTEGRATION-01
-- **Branch:** `integration/al2-release-candidate`
-- **Status:** Local integration and offline verification complete; awaiting Project Owner testing.
+**Project:** Ashura's Light 2
+**Phase:** AL2-INTEGRATION-02
+**Branch:** `integration/al2-release-candidate`
+**Integrated source commit:** `b96b657f3220cc1526b08b48ca641aed006abe81`
+**Base:** `origin/main` at `d50d9f484c48aee615fbcd7a862db89050a5a692`
 
-## Integration history
+## Integration and preservation
 
-| Commit | Purpose |
-|---|---|
-| `a9f0d76d05b3e5871be3c60381084ac59f308861` | Merge local AL2 kernel integrity checkpoints; parents: `366fb1339bb8fec32a88ff7f3d4fefb4b55c275f` and `f71e4fd0c8a8e9f97ae3ba0636e709042b9f5161`. |
-| `ed304416699f51027ef425936e13e3788635d55d` | `Prepare offline judge-ready release package`. |
-| `a0565ae52987b1e68cba1a1694711cd8964fa8d5` | Exclude internal reconciliation, preservation, and release reports from the Docker build context. |
-| `61611221b00c800dc5268f641e722019b19318d3` | Update readiness evidence with the final image and archive verification. |
+- The working tree was clean before integration. The current branch was `docs/submission-cleanup` at `b96b657`.
+- A recoverable Git bundle and backup branch `backup/al2-pre-integration` were created at that source commit. The verified external kernel stack was copied to `/tmp/al2-integration-backup-20261116T0241/kernels`; its manifest is `/tmp/al2-integration-backup-20261116T0241/manifest.txt`.
+- `dist/` did not exist before this task. A new local distribution was created after integration. The verified kernels were available under `/tmp/ashuras-light2-kernels`; the documented bootstrap command also populated the ignored project `kernels/` directory.
+- `origin/main` is an ancestor of the integration source commit. There were no commits on `origin/main` missing from the source branch and no merge conflicts. The sole source commit ahead was `b96b657`.
+- Its source changes were reviewed by path: README, app startup/API error guidance, user-visible labels, kernel/judge docs, deletion of obsolete planning/internal red-team docs, and a 30-day API regression test.
+- `src/al2/geometry.py` and the scientific calculation implementation are unchanged from `origin/main`. The active sweep, presets, comparison, timeline, statistics, JSON export, and kernel integrity checks remain present.
+- No push, merge to `main`, deployment, or submission was performed.
 
-Preserved checkpoint ancestry:
+## Regression verification
 
-- `60e42a2624514a21154df450c1c07a45c7fc1f09`: ancestor of integration `HEAD`.
-- `f71e4fd0c8a8e9f97ae3ba0636e709042b9f5161`: ancestor of integration `HEAD`.
-- `820f45b83a17313da166dc37b65056beb709e34f`: ancestor of integration `HEAD`, through `origin/main`.
-- `366fb1339bb8fec32a88ff7f3d4fefb4b55c275f`: ancestor of integration `HEAD`.
+Host environment, with verified kernels:
 
-The remote feature commit was not merged again; `origin/main` already contained it. The pre-integration worktree stash remains intact: `0b17039bcba0233a7b09b5f3b3e0c35e2c146f9a`.
+- `python -m pytest -q`: **21 passed**.
+- `POST /api/compute`: **HTTP 200**.
+- `POST /api/sweep` with `days=30`, `step_hours=1`: **HTTP 200**, 721 samples.
+- For `(lon 0°, lat -89.9°, alt 0 km, 2026-11-15 00:00:00 UTC)`, sweep percentages were Sun above horizon **100.0%** and Earth above horizon **42.6%**. Both are finite and in `[0, 100]`.
+- Missing and SHA-256-corrupted kernel directories caused startup kernel verification to fail closed (`KERNELS_OK=False`).
 
-## Conflict resolution
+## Browser/UI verification
 
-`templates/index.html` was reconciled against the latest fetched `origin/main` template. The warm lunar palette and other remote template content were retained, with the responsive, keyboard-focusable comparison-table wrapper restored from the stashed worktree. The resulting template diff against `origin/main` is the table wrapper only.
+The actual Flask application was tested in Chromium at 1440 px desktop and 390 × 844 px mobile viewports using real API results.
 
-## Integrated release file inventory
+- Preset selection updated the site coordinates and calculations returned successfully.
+- Four single-epoch site evaluations appeared in the comparison table.
+- The 30-day sweep returned 721 samples and finite, bounded statistics. At the selected Haworth approximate preset, the UI displayed Sun **69.8%**, Earth **59.2%**, and the elevation timeline.
+- Timeline canvas rendered non-background series pixels.
+- JSON export downloaded as `al2-result.json`; the file parsed and included Sun, Earth, and provenance data.
+- No browser console errors, page errors, or failed requests occurred.
+- Mobile document width was **390 px** at a 390 px viewport. The comparison region was **316 px** wide with **672 px** of internally scrollable table content; there was no page-wide horizontal overflow.
 
-The release implementation and evidence commits add or modify these 20 paths relative to `origin/main`:
+### Refreshed screenshots
 
-**Added**
+Captured from the current UI after regression checks:
 
-- `.dockerignore`
-- `.gitignore`
-- `AL2_JUDGE_READINESS_REPORT.md`
-- `AL2_KERNEL_INTEGRITY_REPORT.md`
-- `AL2_TEST_REPORT.md`
-- `docs/JUDGE_QUICKSTART.md`
-- `docs/KERNEL_NOTICES.md`
-- `docs/screenshots/al2-test-01-mobile-comparison.png`
-- `docs/screenshots/al2-test-01-mobile-provenance.png`
-- `docs/screenshots/al2-test-01-mobile-results.png`
-- `docs/screenshots/al2-test-03-desktop-final.png`
-- `docs/screenshots/al2-test-03-mobile-final.png`
-- `src/al2/kernel_manifest.py`
-- `tests/test_kernel_integrity.py`
+1. [Desktop landing/default UI](docs/screenshots/al2-test-03-desktop-final.png) — replaced.
+2. [Desktop completed 30-day sweep](docs/screenshots/al2-sweep-desktop.png).
+3. [Desktop sweep statistics and timeline](docs/screenshots/al2-sweep-stats-timeline-desktop.png).
+4. [Desktop four-site comparison](docs/screenshots/al2-comparison-desktop.png).
+5. [Mobile landing/default UI](docs/screenshots/al2-test-03-mobile-final.png) — replaced.
+6. [Mobile sweep and internally scrollable comparison](docs/screenshots/al2-sweep-mobile.png).
 
-**Modified**
+The pre-refresh hashes for all previously tracked screenshots are recorded in the recovery manifest noted above.
 
-- `README.md`
-- `app.py`
-- `docs/KERNEL_MANIFEST.md`
-- `scripts/bootstrap_kernels.py`
-- `src/al2/geometry.py`
-- `templates/index.html`
+## Docker judge package
 
-`AL2_INTEGRATION_REPORT.md` itself is tracked separately in an internal evidence commit; it is not part of the 20-path release inventory or the judge package commit.
+- Build: `docker build -t ashura-light2:judge .` — **passed**.
+- Image ID: `sha256:66d1edbb774275719fae165210dfad23ee6a9c5782e029c40c6571e064d328ef`.
+- Archive: `dist/ashura-light2-judge.tar` (**99,616,768 bytes**).
+- Archive SHA-256: `a2e8a2a83439deb78985597902823add1ca916e8563864a497568e9fd29d13ca`.
+- `dist/SHA256SUMS` matches the archive.
+- Clean-load: the image tag was removed, loaded from the archive, and restored with the same image ID.
+- After clean-load, `docker run --rm --network none ashura-light2:judge python -m pytest -q`: **21 passed**.
+- Offline image verification found all five manifest kernels and matched every SHA-256. A live Flask server in a `--network none` container returned home **HTTP 200**, `/api/compute` **HTTP 200**, and `/api/sweep` **HTTP 200** with 721 samples and the reference percentages above.
 
-The judge package commit staged only the nine requested judge-facing files. The reconciliation, preservation, release-review, and integration reports are not part of that package commit. The reconciliation, preservation, release-review, readiness, and integration reports are excluded from the Docker build context. `dist/ashura-light2-judge.tar` and `dist/SHA256SUMS` remain ignored and are not in Git history.
+## README command verification
 
-## Scientific boundary and kernel verification
+- On Linux, the documented default `python scripts/bootstrap_kernels.py` completed and verified all five files in `kernels/`.
+- The documented Python tests passed with that verified stack.
+- The README Docker image tag `ashuras-light2` was built and run at loopback port 5001 because the host app occupied 5000; its home page and both APIs returned HTTP 200, including the 721-sample sweep. The packaged `ashura-light2:judge` archive was separately clean-loaded and tested offline.
+- PowerShell commands were reviewed but not executed in this Linux environment.
 
-`src/al2/geometry.py` is unchanged relative to the preserved `f71e4fd` integrity checkpoint. The integration does not alter calculation formulas, coordinate conventions, or scientific constants:
+## Security review findings
 
-- Ephemeris: DE421
-- Frame: `MOON_ME_DE421`
-- Correction: `NONE`
-- Reference radius: 1737.4 km
+The focused sweep-flow security review reported **no confirmed exploitable vulnerabilities**. Its scope was the 30-day sweep execution flow, inputs, data handling, and side effects; it was not a comprehensive security audit of the full product.
 
-The five image kernels were verified against `docs/KERNEL_MANIFEST.md` during the final image build and again after clean-loading the archive:
+## Scientific baseline and limitations
 
-| Kernel | Expected and actual SHA-256 | Result |
-|---|---|---|
-| `naif0012.tls` | `678e32bdb5a744117a467cd9601cd6b373f0e9bc9bbde1371d5eee39600a039b` | Pass |
-| `pck00011.tpc` | `3dff7b1dbeceaa01f25467767d3fa25816051c85d162d1edf04acb310ee28bb1` | Pass |
-| `moon_080317.tf` | `78732477b96f9863e7b0d65bcee3c22b8707ca5ed0db56d1173319cb2e8c7993` | Pass |
-| `moon_pa_de421_1900-2050.bpc` | `656f90616403d75a75f0cd6c8830fc5b44f8cb4facb5ccb8915e752b397520cf` | Pass |
-| `de421.bsp` | `08b20db2ae22488650641c5a9033e5bfda4b1c4b440cfeaf20f621cfa18ecdb3` | Pass |
+The scientific baseline was not changed: DE421, frame `MOON_ME_DE421`, geometric correction `NONE`, and reference radius 1737.4 km. The outputs remain terrain-free centre-direction geometry. Horizon visibility does not establish usable power, operational communications, terrain-masked visibility, or landing safety. Preset coordinates marked approximate should be confirmed before use. Docker still uses Flask's development server and is intended for local demonstration, not production deployment.
 
-## Regression results
+## Current state
 
-- **Automated suite in final clean-loaded image:** 12 passed, 0 failed, 0 skipped.
-- Host `.venv` run without local kernels: 9 passed, 3 skipped. These skips were not counted as passes; the full in-image suite ran with the verified kernel stack.
-- Corrupted `de421.bsp`: calculation API returned **HTTP 503** with a SHA-256 mismatch; no result was produced.
-- Network-disabled live Flask server: `/` returned **HTTP 200**; three `/api/compute` requests returned **HTTP 200**.
-- Reference case, `(lon 0°, lat -89.9°, alt 0 km, 2026-11-15 00:00 UTC)`:
-  - Sun: `114.4394201° / +1.5149980°` AZ/EL.
-  - Earth: `357.3803908° / -3.4529761°` AZ/EL.
-- Signed coordinate cases `(-30°, -89.9°)` and `(+30°, +89.9°)` were preserved and returned finite results. Invalid longitude returned **HTTP 400**.
-- Browser UI: four evaluations appeared in the comparison table, including negative elevations and signed coordinates. The JSON export produced `al2-result.json`; its content parsed as JSON and included provenance.
-- At a 390 × 844 viewport, document client and scroll widths were both 375 px (vertical scrollbar included). The comparison region was 302 px wide with 672 px scrollable content and keyboard focusability; no page-wide horizontal overflow occurred.
-
-## Docker distribution
-
-- Image: `ashura-light2:judge`
-- Image ID: `sha256:6a4b2f9bb25da3fe96a92b90dc0509295889800cd978a234772f138cce16691a`
-- Archive: `dist/ashura-light2-judge.tar`
-- Archive size: **97,968,128 bytes**
-- SHA-256: `9e02a93579d0980c42dd3aa0f9e82cd66d4baf1c17ceaa762192e0ec44f3d215`
-- `dist/SHA256SUMS` contains the matching archive digest.
-- Clean-load check removed the judge image tag and loaded the archive; Docker restored the same image ID. The full test suite, kernel/hash checks, and offline API checks then passed against the restored image.
-
-The app and calculations work with `--network none`. This Docker host cannot publish a browser port from `--network none`; local browser testing therefore used a loopback-published bridge port. No runtime kernel download is required.
-
-## Current state and limitations
-
-- Integration branch is local; no push, merge to `main`, deployment, publication, or submission occurred.
-- The integration/readiness reports remain local and unpushed.
-- The pre-integration stash remains available and was not dropped.
-- No production WSGI server is configured; the Docker image starts Flask's development server for this local judge demonstration.
-- Judges requiring strict container network isolation and simultaneous host-browser access will need an owner-approved networking alternative.
-
-**Ready for Project Owner testing and demo recording.**
+`integration/al2-release-candidate` is locally testable and ready for Project Owner acceptance. Screenshot files, this report, the local ignored Docker package, and verified kernel files are present locally. No changes were pushed or merged.
