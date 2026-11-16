@@ -139,8 +139,12 @@ def sweep(
     if days <= 0 or step_hours <= 0:
         raise ValueError("days and step_hours must be positive")
     start_et = spice.str2et(start_utc)
+    end_et = start_et + days * 86400.0
     step_sec = step_hours * 3600.0
-    n_steps = int(days * 24.0 / step_hours) + 1
+    # Include the endpoint even when step does not divide the window evenly.
+    n_steps = int((end_et - start_et) / step_sec) + 1
+    if start_et + (n_steps - 1) * step_sec < end_et - 1e-6:
+        n_steps += 1
     times: List[str] = []
     sun_els: List[float] = []
     earth_els: List[float] = []
