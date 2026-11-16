@@ -1,19 +1,20 @@
 # Offline judge quick start
 
-This distribution contains the application, its Python dependencies, the MIT-licensed project code, the separate [NAIF kernel notice](KERNEL_NOTICES.md), the [kernel manifest](KERNEL_MANIFEST.md), and the five manifest-verified unmodified kernels.
+The prebuilt Docker archive is delivered separately; it is not stored in this source repository. These steps assume you received both `ashura-light2-judge.tar` and `SHA256SUMS` and placed them in a `dist/` folder at the project root. If those files were not provided, use the online build steps in the project [README](../README.md) instead.
 
-The application makes no runtime network requests and does not download kernels. The Docker image contains everything required to calculate.
-
-From the repository root, first verify the archive against `dist/SHA256SUMS`, then load and run it:
+In Windows PowerShell, verify and load the archive:
 
 ```powershell
 $expected = (Get-Content .\dist\SHA256SUMS).Trim().Split(' ')[0]
 $actual = (Get-FileHash -Algorithm SHA256 .\dist\ashura-light2-judge.tar).Hash.ToLowerInvariant()
 if ($actual -ne $expected) { throw "Archive SHA-256 mismatch" }
 docker load -i .\dist\ashura-light2-judge.tar
+```
+
+Run the loaded image:
+
+```powershell
 docker run --rm -p 127.0.0.1:5000:5000 ashura-light2:judge
 ```
 
-Open <http://127.0.0.1:5000/>. Stop the application with Ctrl+C.
-
-The loopback-only port binding exposes the application only on the local machine. Docker's `--network none` mode prevents publishing ports to the host, so that mode cannot be combined with a browser-accessible `-p 5000:5000` UI. The image was separately verified with `--network none` using in-container HTTP checks.
+Open <http://127.0.0.1:5000>. Stop the app with Ctrl+C. The loopback port binding makes the browser interface available on this computer only. The prebuilt image includes the verified kernels and does not need internet access at runtime.

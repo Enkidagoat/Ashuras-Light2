@@ -61,6 +61,23 @@ def test_sweep_ok(client):
     assert len(data["sun_elevations"]) == len(data["times"])
 
 
+def test_sweep_30_days(client):
+    rv = client.post("/api/sweep", json={
+        "lon": 0.0,
+        "lat": -89.9,
+        "utc": "2026-11-15 00:00:00 UTC",
+        "days": 30,
+        "step_hours": 1.0,
+    })
+    assert rv.status_code == 200
+    data = rv.get_json()
+    assert data["days"] == 30
+    assert data["step_hours"] == 1.0
+    assert len(data["times"]) == 721
+    assert len(data["sun_elevations"]) == len(data["times"])
+    assert len(data["earth_elevations"]) == len(data["times"])
+
+
 def test_sweep_bad_input(client):
     rv = client.post("/api/sweep", json={
         "lon": 0.0,

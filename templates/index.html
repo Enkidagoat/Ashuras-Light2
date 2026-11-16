@@ -35,10 +35,10 @@ details { margin-top:0.75rem; font-size:0.85rem; }
 </head>
 <body>
 <h1>ASHURA'S LIGHT 2</h1>
-<div class="sub">LUNAR SOUTH-POLE GEOMETRY &nbsp;|&nbsp; VIABILITY CHECK</div>
-<div class="banner">Launch slipped two weeks — is your south-pole site still viable for power and communications?</div>
+<div class="sub">LUNAR SOUTH-POLE GEOMETRY &nbsp;|&nbsp; HORIZON CHECK</div>
+<div class="banner">Compare geometric Sun and Earth visibility at candidate south-pole sites.</div>
 {% if not kernels_ok %}
-<div class="banner">Kernels not loaded. Run <code>python scripts/bootstrap_kernels.py</code> or set AL2_KERNEL_DIR.</div>
+<div class="banner">Verified kernels are unavailable. From the project folder, run <code>python scripts/bootstrap_kernels.py</code>, then restart the app. If your kernels are in another folder, set <code>AL2_KERNEL_DIR</code> before launch.</div>
 {% endif %}
 
 <div class="grid">
@@ -55,6 +55,7 @@ details { margin-top:0.75rem; font-size:0.85rem; }
         <option value="-85.5,30">Nobile Rim 1 (approx)</option>
         <option value="-89.9,0">Near south pole (-89.9°, 0°)</option>
       </select>
+      <p class="sub">Preset coordinates are illustrative. Confirm site coordinates before relying on a result.</p>
       <label>LATITUDE (°, +N)</label>
       <input name="lat" type="number" step="any" value="-89.9" required>
       <label>LONGITUDE (°, +E)</label>
@@ -64,13 +65,13 @@ details { margin-top:0.75rem; font-size:0.85rem; }
       <label>UTC (start of sweep or single epoch)</label>
       <input name="utc" type="text" value="2026-11-15 00:00:00 UTC" required>
       <button type="submit">Calculate Single Epoch</button>
-      <button type="button" id="sweep">30-Day Viability Sweep</button>
+      <button type="button" id="sweep">30-Day Geometry Sweep</button>
     </form>
   </div>
 
   <div class="panel" id="results">
     <h3>02 — Local sky geometry</h3>
-    <p class="sub">Azimuth / elevation &nbsp;|&nbsp; Geometric &nbsp;|&nbsp; Power & comms proxy</p>
+    <p class="sub">Azimuth / elevation &nbsp;|&nbsp; Geometric centre-direction only</p>
     <div id="cards"></div>
     <canvas id="plot"></canvas>
     <p class="sub">Zero-degree horizon marked. Amber = Sun (power), copper = Earth (comms). Markers below the line are below the horizon.</p>
@@ -221,14 +222,14 @@ document.getElementById("sweep").onclick = async () => {
     document.getElementById("sweep-stats").innerHTML = `<p class="warning">${data.error}</p>`;
     return;
   }
-  const sunset = data.next_sunset_hours != null ? data.next_sunset_hours.toFixed(1) + " h" : "none in window";
-  const earthset = data.next_earthset_hours != null ? data.next_earthset_hours.toFixed(1) + " h" : "none in window";
+  const sunset = data.next_sunset_hours != null ? data.next_sunset_hours.toFixed(1) + " h" : "not observed in window";
+  const earthset = data.next_earthset_hours != null ? data.next_earthset_hours.toFixed(1) + " h" : "not observed in window";
   document.getElementById("sweep-stats").innerHTML = `
     <div class="stats">
-      <div class="stat">Sun up (power proxy): <strong>${data.sun_up_percent}%</strong></div>
-      <div class="stat">Earth visible (comms proxy): <strong>${data.earth_visible_percent}%</strong></div>
-      <div class="stat">Next sunset: <strong>${sunset}</strong></div>
-      <div class="stat">Next Earthset: <strong>${earthset}</strong></div>
+      <div class="stat">Sun above horizon (power proxy): <strong>${data.sun_up_percent}%</strong></div>
+      <div class="stat">Earth above horizon (comms proxy): <strong>${data.earth_visible_percent}%</strong></div>
+      <div class="stat">Next sampled sunset: <strong>${sunset}</strong></div>
+      <div class="stat">Next sampled Earth set: <strong>${earthset}</strong></div>
     </div>
     <p class="sub">30-day geometric sweep from ${data.start_utc}. Amber = Sun elevation, copper = Earth elevation.</p>`;
   drawTimeline(data.times, data.sun_elevations, data.earth_elevations);
