@@ -1,8 +1,12 @@
 # Ashura's Light 2
 
-A lunar south-pole geometry tool. Enter a site and UTC time to calculate terrain-free, geometric centre-direction azimuth and elevation for the Sun and Earth. The 30-day sweep samples those elevations hourly and reports the share of samples above the local horizon.
+The lunar south pole is a challenging place to estimate sunlight: the Sun stays close to the horizon, and small changes in location can change when it rises or sets. Those illumination windows matter when comparing landing-site candidates and planning solar-powered operations.
 
-These are geometry results, not predictions of usable power, working communications, terrain visibility, or landing safety.
+Ashura's Light 2 calculates the Sun's and Earth's geometric centre-direction azimuth and elevation above a local, terrain-free horizon. Its 30-day sweep plots both elevations over time and summarizes the samples above the horizon, helping users compare candidate locations and spot differences in their visibility windows.
+
+The current model does not include local terrain or shadows. It does not predict actual surface illumination, usable power, operational communications, or landing safety.
+
+![30-day sweep results and elevation timeline](docs/screenshots/al2-sweep-desktop.png)
 
 ## Run with Python
 
@@ -89,8 +93,6 @@ Product screenshots include the interface, results, comparison, and provenance v
 ![Four-date site comparison](docs/screenshots/03-four-date-comparison.png)
 
 ![Provenance and limitations](docs/screenshots/04-provenance-limitations.png)
-
-![30-day sweep statistics and elevation timeline](docs/screenshots/al2-sweep-desktop.png)
 
 ![Mobile 30-day sweep results and internally scrollable comparison](docs/screenshots/al2-sweep-mobile.png)
 

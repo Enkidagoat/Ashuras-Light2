@@ -10,6 +10,13 @@ app = Flask(__name__)
 
 KERNEL_DIR = os.environ.get("AL2_KERNEL_DIR", "kernels")
 
+
+def _validate_latitude(latitude: float) -> float:
+    if not -90.0 <= latitude <= 90.0:
+        raise ValueError("latitude must be between -90 and 90 degrees")
+    return latitude
+
+
 try:
     load_kernels(KERNEL_DIR)
     KERNELS_OK = True
@@ -33,7 +40,7 @@ def api_compute():
     data = request.get_json(force=True)
     try:
         lon = float(data["lon"])
-        lat = float(data["lat"])
+        lat = _validate_latitude(float(data["lat"]))
         utc = data["utc"]
         alt = float(data.get("alt", 0.0))
         sun = compute(lon, lat, utc, "SUN", alt)
@@ -65,7 +72,7 @@ def api_sweep():
     data = request.get_json(force=True)
     try:
         lon = float(data["lon"])
-        lat = float(data["lat"])
+        lat = _validate_latitude(float(data["lat"]))
         utc = data["utc"]
         alt = float(data.get("alt", 0.0))
         days = int(data.get("days", 30))
